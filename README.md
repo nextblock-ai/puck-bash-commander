@@ -62,3 +62,15 @@ The developers and contributors of this project do not accept any responsibility
 As an experiment, Puck may generate content or take actions that are not in line with real-world business practices or legal requirements. It is your responsibility to ensure that any actions or decisions made based on the output of this software comply with all applicable laws, regulations, and ethical standards. The developers and contributors of this project shall not be held responsible for any consequences arising from the use of this software.
 
 By using Puck and Bash Commander, you agree to indemnify, defend, and hold harmless the developers, contributors, and any affiliated parties from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from your use of this software or your violation of these terms.
+
+## Beta Version Disclaimer
+
+Please be aware that this software/project is currently in its Beta version, which means it's still in the active development stage. This version is intended for testing and feedback purposes, not for production use.
+
+While we've worked hard to provide a high-quality experience, it's possible you may encounter bugs, errors, or other issues. We encourage you to report any issues you encounter, and we appreciate your patience as we work on improvements.
+
+Please also note that certain features may be incomplete, subject to change, or not fully functional. We're actively working on these areas, and we're excited about the improvements to come.
+
+Your use of this beta software/project is at your own risk. The developers/maintainers of the project will not be held responsible for any damage, data loss, or other issues resulting from the use of this beta version.
+
+By using this beta version, you're helping us to improve the software/project. We appreciate your feedback and suggestions!
