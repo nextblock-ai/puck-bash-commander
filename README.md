@@ -1,71 +1,30 @@
-# puck-bash-commander README
+options that you can customize to suit your needs. These settings can be found in the extension settings within Visual Studio Code:
 
-This is the README for your extension "puck-bash-commander". After writing up a brief description, we recommend including the following sections.
+- `puck.apikey`: The API key for the OpenAI GPT service. This is required for the AI-powered shell agent to function.
+- `puck.temperature`: The default temperature to use in queries. This affects the creativity of the AI's responses. Higher values result in more creative responses, while lower values produce more focused and deterministic outputs.
+- `puck.maxTokens`: The default maximum number of tokens to use in queries. This limits the length of the AI's responses.
 
-## Features
+## Usage
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Once you have installed and configured the Puck - Bash Commander extension, you can start using its features to streamline your development process:
 
-For example if there is an image subfolder under your extension project workspace:
+1. Open the Bash Commander terminal by running the "puck: Bash Commander" command from the command palette.
+2. Enter your development task or question in the terminal. The AI-powered shell agent will respond with appropriate shell commands, guidance, or follow-up questions.
+3. Execute the suggested shell commands, follow the guidance provided, or answer any follow-up questions to complete your task.
 
-\!\[feature X\]\(images/feature-x.png\)
+## Examples
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Here are some example tasks and questions you can try with the Bash Commander:
 
-## Requirements
+- "Create a new Python file called `hello_world.py` and write a Hello World program."
+- "Install the `numpy` package using `pip`."
+- "Create a new directory called `src` and move all JavaScript files into it."
+- "How do I set up a virtual environment for a Python project?"
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Contributing
 
-## Extension Settings
+If you are interested in contributing to the development of Puck - Bash Commander, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to get started.
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## License
 
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Puck - GNU General Public License v3.0
