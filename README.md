@@ -1,5 +1,8 @@
 # Puck - Bash Commander
 
+[![Discord Follow](https://dcbadge.vercel.app/api/server/wCkJFveHeF?style=flat)](https://discord.gg/wCkJFveHeF)
+[![Twitter Follow](https://img.shields.io/twitter/url/https/twitter.com/bukotsunikki.svg?style=social&label=Follow%20%40NextBlockAI)](https://twitter.com/nextblockai)
+
 Puck - Bash Commander is an extension for Visual Studio Code that brings the power of AI to your development environment. It is part of the Puck suite of AI development tools. Bash Commander uses an advanced AI model to help you execute complex development tasks quickly and efficiently.
 
 ## Features
