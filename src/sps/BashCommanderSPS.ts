@@ -90,21 +90,21 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
                 
                 // if the command starts with a 🖥️' then we need to run the command
                 else if(msg.startsWith('🖥️')) {
-                    output += this._executeBashCommand(msg);
+                    output += await this._executeBashCommand(msg);
                 }
                 
                 // if the command starts with a 🆚 then we need to run the command
                 else if(msg.startsWith('🆚')) {
-                    output += this._executeVSCodeCommand(msg);
+                    output += await this._executeVSCodeCommand(msg);
                 }
 
                 else if(msg.startsWith('📬')) {
-                    this._addOpenTaskToTaskList(msg);
+                    await this._addOpenTaskToTaskList(msg);
                     output += msg;
                 }
 
                 else if(msg.startsWith('📭')) {
-                    this._removeOpenTaskFromTaskList(msg);
+                    await this._removeOpenTaskFromTaskList(msg);
                     output += msg;
                 }
                 
