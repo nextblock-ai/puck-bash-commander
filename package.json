@@ -3,6 +3,10 @@
     "displayName": "Puck - Bash Commander",
     "description": "part of the Puck suite of AI development tools",
     "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
+    },
     "engines": {
         "vscode": "^1.77.0"
     },
@@ -56,7 +60,7 @@
         "@types/react-dom": "^18.2.1",
         "@types/sha256": "^0.2.0",
         "@types/shelljs": "^0.8.12",
-        "@types/vscode": "^1.78.0",
+        "@types/vscode": "^1.77.0",
         "@types/xmlserializer": "^0.6.3",
         "@typescript-eslint/eslint-plugin": "^5.56.0",
         "@typescript-eslint/parser": "^5.56.0",
