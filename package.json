@@ -1,5 +1,6 @@
 {
     "name": "puck-bash-commander",
+    "publisher": "NextBlock AI",
     "displayName": "Puck - Bash Commander",
     "description": "part of the Puck suite of AI development tools",
     "version": "0.0.1",
