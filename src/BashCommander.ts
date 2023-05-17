@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode';
 import { CustomPseudoTerminal } from './terminals/CustomTerminal';
-import BashCommanderPlusSPS from './sps/BashCommanderPlusSPS';
+import BashCommanderPlusSPS from './sps/BashCommanderSPS';
 import BashExecutor from './utils/BashExecutor';
 
 type Files = { [key: string]: string };

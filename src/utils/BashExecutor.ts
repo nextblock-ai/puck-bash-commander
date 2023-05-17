@@ -1,4 +1,5 @@
 import { exec } from 'child_process';
+import shelljs from 'shelljs';
 
 export default class BashExecutor {
     private currentPath: string;
@@ -76,13 +77,20 @@ export default class BashExecutor {
 
     async runBashCommand(command: string, cwd: string): Promise<{ stdout: string, stderr: string }> {
         return new Promise((resolve, reject) => {
-            exec(command, { cwd }, (error, stdout, stderr) => {
-                if (error) {
-                    resolve({ stdout: '', stderr: error.message });
+            shelljs.exec(command, { cwd }, (code, stdout, stderr) => {
+                if (code !== 0) {
+                    resolve({ stdout: '', stderr: stderr || 'Error' });
                 } else {
-                    resolve({ stdout, stderr });
+                    resolve({ stdout, stderr: '' });
                 }
             });
+            // exec(command, { cwd }, (error, stdout, stderr) => {
+            //     if (error) {
+            //         resolve({ stdout: '', stderr: error.message });
+            //     } else {
+            //         resolve({ stdout, stderr });
+            //     }
+            // });
         });
     }
 

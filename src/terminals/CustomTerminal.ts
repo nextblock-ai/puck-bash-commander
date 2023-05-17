@@ -55,7 +55,7 @@ export class CustomPseudoTerminal {
 
     private _spinner = {
         interval: 100,
-        frames: ['䷀', '䷫', '䷠', '䷋', '䷓', '䷖', '䷁', '䷗', '䷒', '䷊', '䷡', '䷪'],
+        frames: ['🌍','🌎','🌏'],
         currentFrame: 0,
         handle: null,
     };

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode';
 import { CustomPseudoTerminal } from './CustomTerminal';
-import BashCommanderPlusSPS from '../sps/BashCommanderPlusSPS';
+import BashCommanderSPS from '../sps/BashCommanderSPS';
 import { exec } from 'child_process';
 import BashExecutor from '../utils/BashExecutor';
 
@@ -31,7 +31,7 @@ type Files = { [key: string]: string };
 export default class BashCommander extends CustomPseudoTerminal {
     currentPath: string;
     interrupt = false;
-    sps: BashCommanderPlusSPS;
+    sps: BashCommanderSPS;
     bashExecutor: BashExecutor;
     context: vscode.ExtensionContext;
 
@@ -46,9 +46,8 @@ export default class BashCommander extends CustomPseudoTerminal {
         // create the sps amd add the open proejct files
         const openFiles = this.getOpenFiles();
         this.bashExecutor = new BashExecutor();
-        this.sps = new BashCommanderPlusSPS(this.context, this);
+        this.sps = new BashCommanderSPS(this.context, this);
     }
-
     getOpenFiles() {
         const openFiles: any = {};
         vscode.window.visibleTextEditors.forEach((editor) => {
@@ -69,12 +68,12 @@ export default class BashCommander extends CustomPseudoTerminal {
         this._onDidWrite.fire('Ctrl+C detected. Interrupting the task...\r\n');
         setTimeout(() => {
             this.createSPS();
-        });
+        }, 100);
     }
 
     public createSPS() {
         const openFiles = this.getOpenFiles();
-        this.sps = new BashCommanderPlusSPS(this.context, this);
+        this.sps = new BashCommanderSPS(this.context, this);
         this._onDidWrite.fire('\x1b[2J\x1b[3J\x1b[H');
         this._onDidWrite.fire('$ ');
     }
@@ -103,10 +102,20 @@ export default class BashCommander extends CustomPseudoTerminal {
     }
 
     async executeBashCommand(command: string, log: any): Promise<{ stdout: string, stderr: string }> {
+        if(command.startsWith('cd ')) {
+            const path = command.replace('cd ', '');
+            process.chdir(path);
+            this.currentPath = path;
+            return { stdout: '', stderr: '' };
+        }
         return await this.bashExecutor.executeBashCommand(command, log);
     }
 
     async output(text: string): Promise<void> {
         this._onDidWrite.fire(text + '\r\n');
+    }
+
+    async executeVSCodeCommand(command: string, ...args: any[]): Promise<any> {
+        return await vscode.commands.executeCommand(command, ...args);
     }
 }

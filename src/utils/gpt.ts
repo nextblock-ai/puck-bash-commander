@@ -31,6 +31,7 @@ export async function sendQuery(query: GPTChatConversation): Promise<string> {
     const apikey = getOpenAIKey();
     delete query.apikey;
     try {
+        log(`Sending query to GPT API: ${JSON.stringify(query)}`);
         const response = await axios.post(
             'https://api.openai.com/v1/chat/completions',
             JSON.stringify(query), {

@@ -3,8 +3,7 @@ import * as vscode from 'vscode';
 
 // This method is called when your extension is activated
 export function activate(_context: vscode.ExtensionContext) {
-    const outputChannel = vscode.window.createOutputChannel('Attila Logs');
-    outputChannel.appendLine('Attila extension activated');
+    log('Puck Bash Commander extension activated');
 }
 
 export function deactivate() {
@@ -12,8 +11,9 @@ export function deactivate() {
 }
 
 // log a message to the output channel
+let outputChannel: vscode.OutputChannel;
 export function log(message: string, showChannel = false) {
-    const outputChannel = vscode.window.createOutputChannel('Attila Logs');
+    if(!outputChannel) { outputChannel = vscode.window.createOutputChannel('Puck Bash Commander Logs'); }
     outputChannel.appendLine(message);
     if(showChannel) { outputChannel.show(); }
 }

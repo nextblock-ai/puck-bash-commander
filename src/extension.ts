@@ -3,11 +3,13 @@
 import * as vscode from 'vscode';
 import SetOpenAIKeyCommand from './commands/SetOpenAIKeyCommand';
 import BashCommanderCommand from './commands/BashCommanderCommand';
+import * as logger from './utils/logger';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
+	logger.activate(context);
 	new BashCommanderCommand("bashCommander", "Bash Commander", context);
 	new SetOpenAIKeyCommand("setOpenAIKey", "Set OpenAI Key", context);
 
