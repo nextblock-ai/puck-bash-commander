@@ -5,6 +5,20 @@ import * as vscode from 'vscode';
 import BashCommander from "../terminals/BashCommander";
 import SPS, { SemanticActionHandler } from "../utils/sps/sps";
 import { log } from '../utils/logger';
+import * as path from 'path';
+
+function getOperatingSystem() {
+    switch (process.platform) {
+        case 'darwin':
+            return 'mac';
+        case 'win32':
+            return 'windows';
+        case 'linux':
+            return 'linux';
+        default:
+            return 'linux';
+    }
+}
 
 export default class BashCommanderSPS extends SPS {
     static grammar = `BashCommanderSession {
@@ -36,7 +50,7 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 🖥️ sed -i 's/old/new/g' file.txt
 🖥️ grep -i 'pattern' file.txt
 🖥️ curl -X GET http://www.google.com
-🆚 workbench.action.files.openFile <file>
+🆚 vscode.open <file>
 💬 This is an informational message
 📬 <task>
 📭 <task>
@@ -46,7 +60,8 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 4c. Do NOT USE MULTILINE COMMANDS. Each command must be on its own line.
 5. If you receive a request which starts with 📬 <task> then implement the task and output 📭 <task> when you are done.
 6. The attached files are the user's currently-open files. They are highly likely to be relevant to the user's request. Examine them first before looking at other files.
-** NO CONVERSATIONAL OUTPUT **`;
+** NO CONVERSATIONAL OUTPUT **
+Your host OS is ${getOperatingSystem()}.`;
     triggered = false;
     bashCommander: BashCommander;
     openTasks: string[] = [];
@@ -134,17 +149,20 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
                 }
 
                 this.bashCommander.output(msg);
+                this.bashCommander.output(output);
+            }
+            if(output.length > 0) {
+                this.addMessageToInputBuffer({ role: 'user', content: output });
+                this.bashCommander.output(output);
             }
             // the current task is the first task in the list
             if(this.openTasks.length > 0) {
-                const openTasks = this.openTasks.map((task) => `📬 ${task}`).join('\n');
+                const openTasks = this.openTasks.map((task) => `📬 ${task}`).join('\r\n');
                 const curOpenTask = this.openTasks[0];
-                const tasksVal = '\nOpen Tasks:\n' + openTasks + '\nPERFORM THIS TASK: 📬 ' + curOpenTask + '\n';
-                if(output.length > 0) {
-                    this.addMessageToInputBuffer({ role: 'user', content: output });
-                }
+                const tasksVal = '\r\nOpen Tasks:\r\n' + openTasks + '\r\nPERFORM THIS TASK: 📬 ' + curOpenTask + '\r\n';
+
                 this.addMessageToInputBuffer({ role: 'user', content: tasksVal });
-                output += tasksVal;
+                this.bashCommander.output(tasksVal);
             }
             return recs;
         }
@@ -187,11 +205,24 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 
     async _executeVSCodeCommand(msg: string) {
         this.addMessageToInputBuffer({ role: 'assistant', content: msg });
-        const vsCommand = msg.replace('🆚', '').trim();
-        const result = await this.bashCommander.executeVSCodeCommand(vsCommand);
-        msg = `\r\n🆚 ${vsCommand}\r\n${result.split('\n').join('\r\n')}`;
-        this.addMessageToInputBuffer({ role: 'user', content: msg });
-        return result.split('\n').join('\r\n');
+        let vsCommand = msg.replace('🆚', '').trim().split(' ');
+        let cmd = vsCommand[0];
+        let params: any = vsCommand.slice(1);
+        // if the param looks like a file then turn it into a URI
+        for(let i = 0; i < params.length; i++) {
+            if(params[i].includes('.')) {
+                if(vscode.workspace.workspaceFolders === undefined) {
+                    continue;
+                }
+                const wsFolder = vscode.workspace.workspaceFolders[0];
+                const filePath = path.join(wsFolder.uri.fsPath, params[i]);
+                params[i] = vscode.Uri.file(filePath);
+            }
+        }
+        const result = await this.bashCommander.executeVSCodeCommand(cmd, ...params);
+        const out = `\r\n🆚 ${vsCommand.join(' ')}\r\n${result.split('\n').join('\r\n')}`;
+        this.addMessageToInputBuffer({ role: 'user', content: out });
+        return out;
     }
 
     _outputMessage(message: string, who = 'assistant') {
