@@ -28,7 +28,7 @@ export default class SetOpenAIKeyCommand extends Command {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const command = new SetOpenAIKeyCommand("setOpenAIKey", "Update OpenAI Key", context);
+    const command = new SetOpenAIKeyCommand("setOpenAIKey", "Set OpenAI Key", context);
 }
 
 export function getOpenAIKey(): string {

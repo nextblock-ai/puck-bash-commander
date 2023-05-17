@@ -37,7 +37,11 @@
         "commands": [
             {
                 "command": "puck.bashCommander",
-                "title": "puck: Bash Commander"
+                "title": "Open Bash Commander"
+            },
+            {
+                "command": "puck.setOpenAIKey",
+                "title": "Set OpenAI Key"
             }
         ]
     },
