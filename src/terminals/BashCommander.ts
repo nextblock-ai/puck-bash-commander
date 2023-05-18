@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { CustomPseudoTerminal } from './CustomTerminal';
 import BashCommanderSPS from '../sps/BashCommanderSPS';
 import { exec } from 'child_process';
-import BashExecutor from '../utils/BashExecutor';
+import { parseAndExecuteBashCommands } from '../utils/BashExecutor';
 
 type Files = { [key: string]: string };
 
@@ -32,7 +32,6 @@ export default class BashCommander extends CustomPseudoTerminal {
     currentPath: string;
     interrupt = false;
     sps: BashCommanderSPS;
-    bashExecutor: BashExecutor;
     context: vscode.ExtensionContext;
 
     // constructor
@@ -45,7 +44,6 @@ export default class BashCommander extends CustomPseudoTerminal {
         this.context = context;
         // create the sps amd add the open proejct files
         const openFiles = this.getOpenFiles();
-        this.bashExecutor = new BashExecutor();
         this.sps = new BashCommanderSPS(this.context, this);
     }
     getOpenFiles() {
@@ -101,14 +99,8 @@ export default class BashCommander extends CustomPseudoTerminal {
         return null;
     }
 
-    async executeBashCommand(command: string, log: any): Promise<{ stdout: string, stderr: string }> {
-        if(command.startsWith('cd ')) {
-            const path = command.replace('cd ', '');
-            process.chdir(path);
-            this.currentPath = path;
-            return { stdout: '', stderr: '' };
-        }
-        return await this.bashExecutor.executeBashCommand(command, log);
+    executeBashCommand(command: string, log: any): { stdout: string, stderr: string } {
+        return parseAndExecuteBashCommands(command);
     }
 
     async output(text: string): Promise<void> {

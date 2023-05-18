@@ -61,7 +61,7 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 5. If you receive a request which starts with 📬 <task> then implement the task and output 📭 <task> when you are done.
 6. The attached files are the user's currently-open files. They are highly likely to be relevant to the user's request. Examine them first before looking at other files.
 ** NO CONVERSATIONAL OUTPUT **
-Your host OS is ${getOperatingSystem()}.`;
+Your host OS is ** ${getOperatingSystem()} **`;
     triggered = false;
     bashCommander: BashCommander;
     openTasks: string[] = [];
@@ -194,13 +194,12 @@ Your host OS is ${getOperatingSystem()}.`;
     }
 
     async _executeBashCommand(msg: string) {
-        this.addMessageToInputBuffer({ role: 'assistant', content: msg });
         const bashCommand = msg.replace('🖥️', '').trim();
         const res = await this.bashCommander.executeBashCommand(bashCommand, console.log);
         const result = res.stdout + res.stderr + '\n';
         msg = `\r\n🖥️ ${bashCommand}\r\n${result.split('\n').join('\r\n')}`;
         this.addMessageToInputBuffer({ role: 'user', content: msg });
-        return result.split('\n').join('\r\n');
+        return msg;
     }
 
     async _executeVSCodeCommand(msg: string) {
