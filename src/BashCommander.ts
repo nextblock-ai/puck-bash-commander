@@ -25,12 +25,16 @@ export default class BashCommander extends CustomPseudoTerminal {
         // create the sps amd add the open proejct files
         const openFiles = this.getOpenFiles();
         this.sps = new BashCommanderPlusSPS(this.context, this as any);
+        this.sps.preamble = 'Open workspace Files:\n\n' + openFiles.map((file: any) => `${file.name}\n${file.text}\n`).join('\n');
     }
 
     getOpenFiles() {
-        const openFiles: any = {};
+        const openFiles: any = [];
         vscode.window.visibleTextEditors.forEach((editor) => {
-            openFiles[editor.document.fileName] = editor.document.getText();
+            openFiles.push({
+                name: editor.document.fileName,
+                text: editor.document.getText()
+            });
         });
         return openFiles;
     }
@@ -52,6 +56,7 @@ export default class BashCommander extends CustomPseudoTerminal {
 
     public createSPS() {
         const openFiles = this.getOpenFiles();
+        const oFiles = openFiles.map((file: any) => `${file.name}\n${file.text}\n`).join('\n');
         this.sps = new BashCommanderPlusSPS(this.context, this as any);
         this._onDidWrite.fire('\x1b[2J\x1b[3J\x1b[H');
         this._onDidWrite.fire('$ ');
@@ -66,9 +71,7 @@ export default class BashCommander extends CustomPseudoTerminal {
     }
 
     async processResponse(response: string): Promise<string> {
-        if(!this.sps) {
-            return '';
-        }
+        if(!this.sps) { return ''; }
         await this.sps.handleUserRequest(response);
         return '';
     }
@@ -81,10 +84,8 @@ export default class BashCommander extends CustomPseudoTerminal {
     }
 
     async executeBashCommand(command: string, log: any): Promise<{ stdout: string, stderr: string }> {
-    
         const result =  parseAndExecuteBashCommands(command);
         return result;
-
     }
 
     async output(text: string): Promise<void> {

@@ -3,7 +3,6 @@
 import * as vscode from 'vscode';
 import { CustomPseudoTerminal } from './CustomTerminal';
 import BashCommanderSPS from '../sps/BashCommanderSPS';
-import { exec } from 'child_process';
 import { parseAndExecuteBashCommands } from '../utils/BashExecutor';
 
 type Files = { [key: string]: string };

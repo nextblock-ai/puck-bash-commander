@@ -6,6 +6,7 @@ import BashCommander from "../terminals/BashCommander";
 import SPS, { SemanticActionHandler } from "../utils/sps/sps";
 import { log } from '../utils/logger';
 import * as path from 'path';
+import { sendQuery } from '../utils/gpt';
 
 function getOperatingSystem() {
     switch (process.platform) {
@@ -63,6 +64,7 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 ** NO CONVERSATIONAL OUTPUT **
 Your host OS is ** ${getOperatingSystem()} **`;
     triggered = false;
+    preamble?: string;
     bashCommander: BashCommander;
     openTasks: string[] = [];
     semanticActions: SemanticActionHandler = {
@@ -176,6 +178,53 @@ Your host OS is ** ${getOperatingSystem()} **`;
         }
         this.openTasks.push(taskName);
         return msg;
+    }
+
+    // perform a single iteration of the SPS
+    async iterate(semanticActionHandler: SemanticActionHandler): Promise<any> {
+        this.semanticActionHandler = semanticActionHandler;
+        const messagesVals = this.inputBuffer.map((message) => ({
+            role: message.role,
+            content: message.content
+        }));
+
+        let messagesArray = [{
+            role: 'system',
+            content: this.prompt
+        }];
+        if(this.preamble && this.preamble.length > 0) {
+            messagesArray.push({
+                role: 'system',
+                content: this.preamble || ''
+            });
+        }
+        messagesArray = messagesArray.concat(messagesVals);
+        let response = await sendQuery({
+            model: 'gpt-4',
+            temperature: 0.8,
+            max_tokens: 2048,
+            top_p: 0.8,
+            messages: messagesArray as any
+        });
+        try {
+            response += '\n';
+            const { grammar, semantics } = this.loadGrammar(this.grammarFile);
+            const ohmParser = semantics.addOperation("toJSON", this.semanticActionHandler);
+            const match = grammar.match(response);
+            if (!match.failed()) {
+                const result = await ohmParser(match).toJSON();
+                return result;
+            } else { 
+                this.addMessageToInputBuffer({
+                    role: 'system',
+                    content: 'INVALID OUTPUT FORMAT. Please review the instructions and try again.'
+                });
+                console.log(`invalid output format: ${response}`);
+                await this.iterate(semanticActionHandler);
+            }
+        } catch (e) { 
+            await this.iterate(semanticActionHandler);
+        }
     }
 
     async _removeOpenTaskFromTaskList(msg: string) {

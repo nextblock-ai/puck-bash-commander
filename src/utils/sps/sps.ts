@@ -11,8 +11,8 @@ export type SemanticActionHandler = Ohm.ActionDict<unknown>;
 // a semantic prompt structure - consists of a prompt, a grammar file, and semantic action handler
 export default class SPS {
     protected prompt: string;
-    private grammarFile: string;
-    private semanticActionHandler: SemanticActionHandler | undefined;
+    protected grammarFile: string;
+    protected semanticActionHandler: SemanticActionHandler | undefined;
     protected inputBuffer: GPTChatMessage[];
     private _executing: boolean;
     private _interrupted: boolean;
@@ -116,7 +116,7 @@ export default class SPS {
     }
 
     // load the SPS grammar
-    private loadGrammar(grammarFile: string) {
+    public loadGrammar(grammarFile: string) {
         // Read the grammar file and return an Ohm.js grammar object
         const grammar = Ohm.grammar(grammarFile);
         const semantics = grammar.createSemantics();
