@@ -7,6 +7,7 @@ import SPS, { SemanticActionHandler } from "../utils/sps/sps";
 import { log } from '../utils/logger';
 import * as path from 'path';
 import { sendQuery } from '../utils/gpt';
+import { execSync } from 'child_process';
 
 function getOperatingSystem() {
     switch (process.platform) {
@@ -44,14 +45,16 @@ You:
 2. Validate that the task can be performed by an LLM, if properly decomposed into the right tasks. If the task cannot be performed by an LLM, even after being properly decomposed, then output ⛔
 3. If the task can be performed to completion immediately, then skip to step 3. Otherwish, output a series of 📬 <task> each on its own line, where each task is a subtask of the original task, sized and designed for an LLM to perform. Then, wait for a user response.
 4. Translate the request (or 📬 <task> ) into a series of commands which fulfill the request. 
+5. Always prefer implementing over decomposition. Never create tasks you cannot complete.
+Your host OS is ** ${getOperatingSystem()} **
 Prefix all bash command statements with  🖥️, all VS Code command statements with 🆚, all informational messages with 💬, all new tasks with 📬, all completed tasks with 📭 and always output 🏁 when you have completed the request. FOR EXAMPLE:
 🖥️ ls -al
 🖥️ cat file.txt
 🖥️ tail -n 10 file.txt
-🖥️ sed -i 's/old/new/g' file.txt
 🖥️ grep -i 'pattern' file.txt
-🖥️ curl -X GET http://www.google.com
 🆚 vscode.open <file>
+🖥️ sed -i 's/old/new/g' file.txt
+🆚 workbench.action.files.save
 💬 This is an informational message
 📬 <task>
 📭 <task>
@@ -59,14 +62,15 @@ Prefix all bash command statements with  🖥️, all VS Code command statements
 4a. Do NOT use the cd command to change directories. Instead, use paths relative to the current directory.
 4b. Do NOT define environmental variables or rely on existing bash session variables, as each request is processed in a new bash session.
 4c. Do NOT USE MULTILINE COMMANDS. Each command must be on its own line.
+4d. IF SOMETHING DOESN'T WORK, TRY IT ANOTHER WAY. Be creative. Try different commands. If you've failed after 5 tries, output ⛔
 5. If you receive a request which starts with 📬 <task> then implement the task and output 📭 <task> when you are done.
 6. The attached files are the user's currently-open files. They are highly likely to be relevant to the user's request. Examine them first before looking at other files.
-** NO CONVERSATIONAL OUTPUT **
-Your host OS is ** ${getOperatingSystem()} **`;
+** NO CONVERSATIONAL OUTPUT **`;
     triggered = false;
     preamble?: string;
     bashCommander: BashCommander;
     openTasks: string[] = [];
+    lastCommandsExecuted = '';
     semanticActions: SemanticActionHandler = {
         BashCommanderMessage: async function(delimiters: any, titles: any) {
             const message = { 
@@ -102,42 +106,54 @@ Your host OS is ** ${getOperatingSystem()} **`;
                     if(this.openTasks.length === 0) {
                         this.interrupt(); 
                         this.clearInputBuffer();
+                    } else {
+                        // remove the first task from the list
+                        this._removeOpenTaskFromTaskList(this.openTasks[0]);
+                        return;
                     }
                 }
                 
                 // if the command starts with a 🖥️' then we need to run the command
                 else if(msg.startsWith('🖥️')) {
                     output += await this._executeBashCommand(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
+                    this.lastCommandsExecuted = msg;
                 }
                 
                 // if the command starts with a 🆚 then we need to run the command
                 else if(msg.startsWith('🆚')) {
                     output += await this._executeVSCodeCommand(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                 }
 
                 else if(msg.startsWith('📬')) {
                     await this._addOpenTaskToTaskList(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                     output += msg;
                 }
 
                 else if(msg.startsWith('📭')) {
                     await this._removeOpenTaskFromTaskList(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                     output += msg;
                 }
                 
                 // if the command starts with a 💬 then we need to output a message
                 else if(msg.startsWith('💬')) {
                     output += this._outputMessage(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                 }
 
                 // else if the command starts with a ⛔ then we stop
                 else if(msg.startsWith('⛔')) {
                     this._error(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                     output += msg;
                 }
 
                 else if(msg.startsWith('⚠️')) {
                     this._warning(msg);
+                    this.addMessageToInputBuffer({ role: 'user', content: msg });
                     output += msg;
                 }
 
@@ -151,17 +167,18 @@ Your host OS is ** ${getOperatingSystem()} **`;
                 }
 
                 this.bashCommander.output(msg);
-                this.bashCommander.output(output);
+         //       this.bashCommander.output(output);
             }
             if(output.length > 0) {
-                this.addMessageToInputBuffer({ role: 'user', content: output });
-                this.bashCommander.output(output);
+               // this.addMessageToInputBuffer({ role: 'user', content: output });
+                // this.bashCommander.output(output);
             }
             // the current task is the first task in the list
             if(this.openTasks.length > 0) {
                 const openTasks = this.openTasks.map((task) => `📬 ${task}`).join('\r\n');
                 const curOpenTask = this.openTasks[0];
-                const tasksVal = '\r\nOpen Tasks:\r\n' + openTasks + '\r\nPERFORM THIS TASK: 📬 ' + curOpenTask + '\r\n';
+                const tasksVal = '\r\nOpen Tasks:\r\n' + openTasks + '\r\nLAST COMMANDS EXECUTED: ' + this.lastCommandsExecuted + '\r\n'
+                + 'CURRENT TASK: 📬 ' + curOpenTask + '\r\n';
 
                 this.addMessageToInputBuffer({ role: 'user', content: tasksVal });
                 this.bashCommander.output(tasksVal);
@@ -201,9 +218,9 @@ Your host OS is ** ${getOperatingSystem()} **`;
         messagesArray = messagesArray.concat(messagesVals);
         let response = await sendQuery({
             model: 'gpt-4',
-            temperature: 0.8,
+            temperature: 0.6,
             max_tokens: 2048,
-            top_p: 0.8,
+            top_p: 1,
             messages: messagesArray as any
         });
         try {
@@ -244,8 +261,13 @@ Your host OS is ** ${getOperatingSystem()} **`;
 
     async _executeBashCommand(msg: string) {
         const bashCommand = msg.replace('🖥️', '').trim();
-        const res = await this.bashCommander.executeBashCommand(bashCommand, console.log);
-        const result = res.stdout + res.stderr + '\n';
+        // const res = await this.bashCommander.executeBashCommand(bashCommand, console.log);
+        // we temporarily call child_process.execSync directly until we can get the bashCommander to work
+        let res = execSync(bashCommand);
+        // get string value of stdio
+        let msgStr = res.toString();
+
+        const result = msgStr;//res.stdout + res.stderr + '\n';
         msg = `\r\n🖥️ ${bashCommand}\r\n${result.split('\n').join('\r\n')}`;
         this.addMessageToInputBuffer({ role: 'user', content: msg });
         return msg;
@@ -267,7 +289,8 @@ Your host OS is ** ${getOperatingSystem()} **`;
                 params[i] = vscode.Uri.file(filePath);
             }
         }
-        const result = await this.bashCommander.executeVSCodeCommand(cmd, ...params);
+        let result = await this.bashCommander.executeVSCodeCommand(cmd, ...params);
+        result = result ? result : '';
         const out = `\r\n🆚 ${vsCommand.join(' ')}\r\n${result.split('\n').join('\r\n')}`;
         this.addMessageToInputBuffer({ role: 'user', content: out });
         return out;

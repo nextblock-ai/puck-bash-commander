@@ -1,5 +1,6 @@
 import shell from 'shelljs';
 import bashParser from 'bash-parser';
+import { exec } from 'child_process';
 
 export function parseAndExecuteBashCommands(inputString: any) {
     const parsedCommands = bashParser(inputString);

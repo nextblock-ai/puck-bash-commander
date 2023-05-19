@@ -99,7 +99,10 @@ export default class BashCommander extends CustomPseudoTerminal {
     }
 
     executeBashCommand(command: string, log: any): { stdout: string, stderr: string } {
-        return parseAndExecuteBashCommands(command);
+        this.startSpinner();
+        const ret = parseAndExecuteBashCommands(command);
+        this.stopSpinner();
+        return ret;
     }
 
     async output(text: string): Promise<void> {
