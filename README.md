@@ -13,6 +13,7 @@ Puck - Bash Commander is an extension for Visual Studio Code that brings the pow
 - [📚 Using Bash Commander](#-using-bash-commander)
 - [✨  Use Cases](#-use-cases)
 - [🤝 Contributing](#-contributing)
+- [🚩 Troubleshooting](#-troubleshooting)
 - [📄  License](#-license)
 - [❗ Disclaimer](#-disclaimer)
 - [📌 Beta Version Disclaimer](#-beta-version-disclaimer)
@@ -27,10 +28,16 @@ Puck - Bash Commander is an extension for Visual Studio Code that brings the pow
 
 ## 🚀 Getting Started
 
-1. Install the Puck - Bash Commander extension from the Visual Studio Code marketplace.
-2. Configure the extension settings by providing your OpenAI GPT API key and other preferences.
-3. Launch the Bash Commander terminal by running the "puck: Bash Commander" command from the command palette.
-4. Start interacting with the AI-powered shell agent by entering your development tasks and questions.
+1. Install the Puck - [Bash Commander extension](https://marketplace.visualstudio.com/items?itemName=NextBlock.puck-bash-commander) from the Visual Studio Code marketplace.
+2. Reload Visual Studio Code
+3. Get Your [Open AI API Key](https://platform.openai.com/account/api-keys)
+4. Add your own Open AI API key by running the  the “Set Open AI Key” command from the command palette (CMD+shift+P).
+5. Reload Visual Studio Code
+6. Open a  [new or existing project](https://code.visualstudio.com/docs/editor/workspaces) 
+7. Launch the Bash Commander terminal by running the "Open Bash Commander" command from the command palette (CMD+shift+P).
+8. Start interacting with the AI-powered shell agent by entering your development tasks and questions.
+9. To Stop Bash Commander, reload the window by running the "Developer: Reload Window" command from the command palette (CMD+shift+P).
+
 
 ## 🔧 Configuration
 
@@ -81,6 +88,18 @@ Here are some other example tasks and questions you can try with the Bash Comman
 ## 🤝 Contributing
 
 If you are interested in contributing to the development of Puck - Bash Commander, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to get started.
+
+## 🚩 Troubleshooting
+
+In the current beta status, if Puck Bash Commander is not operating correctly, reload your visual studio code from the command pallet (cmd+shft+p) > reload window
+
+  **Known Errors**
+
+  - The error of overwriting files poorly is known and fixed in an upcoming release
+  - The error of puck executing two commands is known and fixed in an upcoming release
+  - The error of puck only doing BASH things is known and fixed in an upcoming release
+  - The error of puck not shutting down fully is know and being worked on
+
 
 ## 📄 License
 
