@@ -1,69 +1,33 @@
-import shell from 'shelljs';
-import bashParser from 'bash-parser';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
+import split2 from 'split2';
+import through2 from 'through2';
 
-export function parseAndExecuteBashCommands(inputString: any) {
-    const parsedCommands = bashParser(inputString);
-    return traverseAndExecute(parsedCommands);
-}
-
-function executeBashNode(node: any) {
-    let output = {
-        stdout: '',
-        stderr: '',
-    };
-
-    switch (node.type) {
-        case 'Command':
-            const command = node.name.text;
-            const args = node.suffix.map((arg: any) => arg.text).join(' ');
-            const result = shell.exec(`${command} ${args}`, { silent: true });
-            output.stdout += result.stdout;
-            output.stderr += result.stderr;
-            break;
-        case 'Pipeline':
-            node.commands.forEach((command: any) => {
-                const pipelineOutput = executeBashNode(command);
-                output.stdout += pipelineOutput.stdout;
-                output.stderr += pipelineOutput.stderr;
-            });
-            break;
-        case 'Subshell':
-            const subshellOutput = traverseAndExecute(node.commands);
-            output.stdout += subshellOutput.stdout;
-            output.stderr += subshellOutput.stderr;
-            break;
-        case 'CompoundList':
-            node.commands.forEach((command: any) => {
-                const compoundListOutput = traverseAndExecute(command);
-                output.stdout += compoundListOutput.stdout;
-                output.stderr += compoundListOutput.stderr;
-            });
-            break;
-        default:
-            console.error(`Unsupported node type: ${node.type}`);
-    }
-
-    return output;
-}
-
-function traverseAndExecute(node: any) {
-    let output = {
-        stdout: '',
-        stderr: '',
-    };
-
-    if (Array.isArray(node)) {
-        node.forEach((n) => {
-            const nodeOutput = traverseAndExecute(n);
-            output.stdout += nodeOutput.stdout;
-            output.stderr += nodeOutput.stderr;
-        });
-    } else {
-        const nodeOutput = executeBashNode(node);
-        output.stdout += nodeOutput.stdout;
-        output.stderr += nodeOutput.stderr;
-    }
-
-    return output;
+export default async function executeShellCommands(commands: string) {
+	return new Promise((resolve, reject) => {
+		const shell = spawn('bash', ['-c', commands]);
+		let output = '';
+		shell.stdout.pipe(split2()).pipe(
+			through2((chunk: any, enc: any, callback: any) => {
+				output += chunk + '\n';
+				callback();
+			})
+		);
+		shell.stderr.pipe(split2()).pipe(
+			through2((chunk: any, enc: any, callback: any) => {
+				output += chunk + '\n';
+				callback();
+			})
+		);
+		shell.on('error', (error) => {
+			reject(error);
+		});
+		shell.on('close', (code) => {
+			console.log(`Exited with code ${code}`);
+			if (code === 0) {
+				resolve(output);
+			} else {
+				reject(new Error(`Exited with code ${code}: ${output}`));
+			}
+		});
+	});
 }

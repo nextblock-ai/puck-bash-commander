@@ -1,9 +1,9 @@
 {
     "name": "puck-bash-commander",
-    "publisher": "NextBlock AI",
+    "publisher": "NextBlock",
     "displayName": "Puck - Bash Commander",
-    "description": "part of the Puck suite of AI development tools",
-    "version": "0.0.1",
+    "description": "Part of the Puck suite of AI development tools",
+    "version": "0.0.2",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
@@ -58,6 +58,7 @@
     },
     "devDependencies": {
         "@types/blessed": "^0.1.21",
+        "@types/diff": "^5.0.3",
         "@types/glob": "^8.1.0",
         "@types/markdown-it": "^12.2.3",
         "@types/marked": "^4.0.8",
@@ -66,6 +67,8 @@
         "@types/react-dom": "^18.2.1",
         "@types/sha256": "^0.2.0",
         "@types/shelljs": "^0.8.12",
+        "@types/split2": "^4.2.0",
+        "@types/through2": "^2.0.38",
         "@types/vscode": "^1.77.0",
         "@types/xmlserializer": "^0.6.3",
         "@typescript-eslint/eslint-plugin": "^5.56.0",
@@ -79,8 +82,11 @@
     "dependencies": {
         "axios": "^1.4.0",
         "bash-parser": "^0.5.0",
+        "diff": "^5.1.0",
         "ohm-js": "^17.1.0",
         "sha256": "^0.2.0",
-        "shelljs": "^0.8.5"
+        "shelljs": "^0.8.5",
+        "split2": "^4.2.0",
+        "through2": "^4.0.2"
     }
 }

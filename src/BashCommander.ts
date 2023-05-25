@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import { CustomPseudoTerminal } from './terminals/CustomTerminal';
 import BashCommanderPlusSPS from './sps/BashCommanderSPS';
-import { parseAndExecuteBashCommands } from './utils/BashExecutor';
+import parseAndExecuteBashCommands from './utils/BashExecutor';
 
 type Files = { [key: string]: string };
 
@@ -84,8 +84,8 @@ export default class BashCommander extends CustomPseudoTerminal {
     }
 
     async executeBashCommand(command: string, log: any): Promise<{ stdout: string, stderr: string }> {
-        const result =  parseAndExecuteBashCommands(command);
-        return result;
+        const result = await parseAndExecuteBashCommands(command);
+        return result as any;
     }
 
     async output(text: string): Promise<void> {
