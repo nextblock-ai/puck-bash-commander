@@ -184,7 +184,7 @@ export default class PuckREPLCommand extends Command {
 
 			onDidWrite: we.event,
 			open: () => {
-				// we.fire('Bash Commander v0.0.3.\r\n\r\n>>')
+				we.fire('Bash Commander v0.0.4.\r\n\r\n>>')
 				this.ui.run();
 			},
 			close: () => { /* noop*/ },

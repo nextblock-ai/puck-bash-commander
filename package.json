@@ -3,7 +3,7 @@
     "publisher": "NextBlock",
     "displayName": "Puck - Bash Commander",
     "description": "Part of the Puck suite of AI development tools",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
