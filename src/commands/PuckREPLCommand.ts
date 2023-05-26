@@ -3,9 +3,10 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
+import * as blessed from "blessed";
 import { Command } from "../utils/Command";
-import triage from "../agents/triage";
-import CodeEnhancer9 from "../agents/coder";
+import CodeEnhancer from "../agents/coder";
+import { TextualUI } from "../utils/ui";
 
 function colorText(text: string, colorIndex: number): string {
 	let output = '';
@@ -20,17 +21,126 @@ function colorText(text: string, colorIndex: number): string {
 	return output;
 }
 
+class AnimatedTerminalBar {
+	private static readonly BAR_LENGTH = 20;
+	private static readonly BAR_CHAR = '█';
+	spinner: any = {
+		interval: 150,
+		handle: null,
+	};
+	constructor(public emitter: vscode.EventEmitter<string>) { }
+	private getColor(colorIndex: number, colorRange: number, startColor: number[]) {
+		const color = startColor.map((c, i) => {
+			const range = colorRange / startColor.length;
+			const colorValue = c + colorIndex + i * 2;
+			return colorValue > 255 ? 255 : colorValue;
+		});
+		return `rgb(${color.join(',')})`;
+	}
+	private colorText(text: string, colorIndex: number): string {
+		let output = '';
+		for (let i = 0; i < text.length; i++) {
+			const char = text.charAt(i);
+			if (char === ' ' || char === '\r' || char === '\n') {
+				output += char;
+			} else {
+				output += `\x1b[3${colorIndex}m${text.charAt(i)}\x1b[0m`;
+			}
+		}
+		return output;
+	}
+	private getBar(colorIndex: number, colorRange: number, startColor: number[]) {
+		const color = this.getColor(colorIndex, colorRange, startColor);
+		const bar = AnimatedTerminalBar.BAR_CHAR.repeat(AnimatedTerminalBar.BAR_LENGTH);
+		return this.colorText(bar, colorIndex);
+	}
+	public start() {
+		let colorIndex = 0;
+		const colorRange = 256;
+		const startColor = [0, 0, 0];
+		this.spinner.handle = setInterval(() => {
+			const bar = this.getBar(colorIndex, colorRange, startColor);
+			this.emitter.fire('\r' + bar);
+			colorIndex = (colorIndex + 1) % colorRange;
+		}, 100);
+		return () => clearInterval(this.spinner.interval);
+	}
+	public stop() {
+		if (this.spinner.handle) {
+			clearInterval(this.spinner.handle);
+			this.spinner.handle = null;
+			this.emitter.fire('\r' + ' '.repeat(AnimatedTerminalBar.BAR_LENGTH) + '\r\n');
+		}
+	}
+}
+
+
+class BlessedTerminal implements vscode.Pseudoterminal {
+
+	private writeEmitter = new vscode.EventEmitter<string>();
+	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
+	handleInput = this.writeEmitter.fire;
+	private semanticPrompt: CodeEnhancer;
+	private ui: TextualUI;
+	private bar: AnimatedTerminalBar;
+
+	constructor() {
+		this.ui = new TextualUI(this.writeEmitter);
+		this.semanticPrompt = new CodeEnhancer(this.writeEmitter);
+		this.bar = new AnimatedTerminalBar(this.writeEmitter);
+	}
+
+	open(initialDimensions: vscode.TerminalDimensions | undefined): void {
+		this.ui.screen.key(['C-c'], () => {
+			this.ui.screen.destroy();
+			this.writeEmitter.dispose();
+		});
+
+		this.ui.run();
+		// this.ui.screen.append(blessed.box({
+		// 	top: 'center',
+		// 	left: 'center',
+		// 	width: '50%',
+		// 	height: '50%',
+		// 	content: 'Hello {bold}world{/bold}!',
+		// 	tags: true,
+		// 	border: {
+		// 		type: 'line'
+		// 	},
+		// 	style: {
+		// 		fg: 'white',
+		// 		bg: 'magenta',
+		// 		border: {
+		// 			fg: '#f0f0f0'
+		// 		},
+		// 		hover: {
+		// 			bg: 'green'
+		// 		}
+		// 	}
+		// }));
+	}
+
+	close(): void {
+		this.ui.screen.destroy();
+	}
+	// Other methods to implement
+}
+
+
 export default class PuckREPLCommand extends Command {
-	
+
 	working = false;
 	terminal: vscode.Terminal | undefined;
 	pty: any;
 	history: string[] = [];
 	writeEmitter: vscode.EventEmitter<string>;
 	sps: any;
+	ui: TextualUI;
+	private bar: AnimatedTerminalBar;
+		
 
 	_spinner = {
-		interval: 50,
+		interval: 150,
 		frames: [
 			"🕐",
 			"🕑",
@@ -55,25 +165,31 @@ export default class PuckREPLCommand extends Command {
 			"🕤",
 			"🕥",
 			"🕦"
-			],
+		],
 		currentFrame: 0,
 		handle: null,
 	};
 
-    constructor(commandId: string, title: string, context: vscode.ExtensionContext) {
-        
+	constructor(commandId: string, title: string, context: vscode.ExtensionContext) {
+
 		super(commandId, title, context);
 
 		let line = '';
 		const we = this.writeEmitter = new vscode.EventEmitter<string>();
 
+		this.ui = new TextualUI(we);
+		this.bar = new AnimatedTerminalBar(we);
+
 		this.pty = {
-			
+
 			onDidWrite: we.event,
-			open: () => we.fire('Bash Commander v0.0.3.\r\n\r\n>>'),
+			open: () => {
+				// we.fire('Bash Commander v0.0.3.\r\n\r\n>>')
+				this.ui.run();
+			},
 			close: () => { /* noop*/ },
 			handleInput: async (data: string) => {
-				
+
 				// ctrl + c interrupts everything
 				if (data === '\x03') {
 					this.interrupt();
@@ -82,20 +198,19 @@ export default class PuckREPLCommand extends Command {
 				}
 
 				// if we are working then we can't do anything
-				if(this.working) {
+				if (this.working) {
 					return;
 				}
 
 				// if this is a carriage return then we need to execute the command
 				if (data === '\r') { // Enter
 					this.history.push(line);
-					if(line === 'clear') {
+					if (line === 'clear') {
 						we.fire('\x1b[2J\x1b[3J\x1b[;H');
 						line = '';
 						return;
 					}
 					we.fire(`\r\n${colorText(line, 1)}\r\n\n`);
-					this.startSpinner();
 					this.working = true;
 					await this.handleInput(line);
 					line = '';
@@ -144,7 +259,7 @@ export default class PuckREPLCommand extends Command {
 				we.fire(data);
 			},
 		};
-    }
+	}
 	interrupt() {
 		const we = this.writeEmitter;
 		if (this.working) {
@@ -158,61 +273,13 @@ export default class PuckREPLCommand extends Command {
 		}
 	}
 	async handleInput(line: string) {
-		await this.handleCodeRelatedRequest(line);
-
-		// this is where we would send the command to the puck
-		// const triageLine = await triage(line);
-		// const triageType = triageLine.split(' ')[0];
-		// switch(triageType) {
-		// 	case '💡':
-		// 		await this.handleCodeRelatedRequest(triageLine);
-		// 		break;
-		// 	case '📚':
-		// 		await this.handleTestAndDocumentationRequest(triageLine);
-		// 		break;
-		// 	case '🖥️':
-		// 		await this.handleCommandExecutionRequest(triageLine);
-		// 		break;
-		// 	case '🧪':
-		// 		await this.handleCustomExecution(triageLine);
-		// 		break;
-		// 	default:
-		// 		await this.handleUnknownRequest(triageLine);
-		// 		break;
-		// }
-		// this.stopSpinner();
-		// this.working = false;
-		// this.writeEmitter.fire('>>> ');
-	//	return triageLine;
-	}
-	async handleTestAndDocumentationRequest(line: string) {
-		this.writeEmitter.fire('\r\n📚 Documentation/test request\r\n');
-		this.sps = new CodeEnhancer9(super.context, this.writeEmitter);
-		const answer = await this.sps.handleUserRequest(line.slice(2));
-		this.writeEmitter.fire(answer);
-	}
-	async handleCodeRelatedRequest(line: string) {
-		this.writeEmitter.fire('\r\n💡 Code-related request\r\n');
-		this.sps = new CodeEnhancer9(super.context, this.writeEmitter);
-		const result = await this.sps.handleUserRequest(line.slice(2));
+		this.sps = new CodeEnhancer(this.writeEmitter);
+		this.bar.start();
+		const result = await this.sps.handleUserRequest(line);
+		this.bar.stop();
 		this.writeEmitter.fire(result);
-	}
-	async handleCustomExecution(line: string) {
-		this.writeEmitter.fire('\r\n🧪 Custom execution\r\n');
-		this.sps = new CodeEnhancer9(super.context, this.writeEmitter);
-		const result = await this.sps.handleUserRequest('📢 ' + line.slice(2));
-		this.writeEmitter.fire(result);
-	}
-	async handleCommandExecutionRequest(line: string) {
-		this.writeEmitter.fire('\r\n🖥️ Command execution\r\n');
-		this.sps = new CodeEnhancer9(super.context, this.writeEmitter);
-		const result = await this.sps.handleUserRequest(line.slice(2));
-		this.writeEmitter.fire(result);
-	}
-	async handleUnknownRequest(line: string) {
-		this.stopSpinner();
-		this.writeEmitter.fire('\r\n❓ Unknown request\r\n');
 		this.writeEmitter.fire('>>> ');
+		this.working = false;
 	}
 	startSpinner() {
 		const s = this._spinner;
@@ -242,16 +309,16 @@ export default class PuckREPLCommand extends Command {
 		}
 	}
 	clear() {
-		this.writeEmitter.fire('\x1b[2J\x1b[3J\x1b[;H');	
+		this.writeEmitter.fire('\x1b[2J\x1b[3J\x1b[;H');
 	}
 
-    async execute() {
-		const terminal = vscode.window.createTerminal({ name: `Puck Terminal REPL`, pty: this.pty });
-		if(terminal) {
+	async execute() {
+		const terminal = vscode.window.createTerminal({ name: `Bash Commander`, pty: this.pty });
+		if (terminal) {
 			terminal.show();
 			return;
 		}
-    }
+	}
 
 	async processCommand(command: string) {
 		// call the executeCommand call

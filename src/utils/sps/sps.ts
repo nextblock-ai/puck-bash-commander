@@ -15,7 +15,6 @@ export default class SPS {
     protected semanticActionHandler: SemanticActionHandler | undefined;
     protected inputBuffer: GPTChatMessage[];
     private _executing: boolean;
-    private _interrupted: boolean;
     private _llmOptions: any;
     // prompt and grammar file are required
     constructor(prompt: string, grammarFile: string, llmOptions = {
@@ -29,21 +28,22 @@ export default class SPS {
         this.grammarFile = grammarFile;
         this.inputBuffer = [];
         this._executing = false;
-        this._interrupted = false;
         this._llmOptions = llmOptions;
     }
     // add a message to the input buffer to send to the LLM
     addMessageToInputBuffer(message: GPTChatMessage): void { this.inputBuffer.push(message); }
-    interrupt(): void { this._interrupted = true; }
+    interrupt(): void { this._executing = false; }
     
     // perform a single iteration of the SPS
     async iterate(semanticActionHandler: SemanticActionHandler): Promise<any> {
         this.semanticActionHandler = semanticActionHandler;
+        if (this.inputBuffer.length === 0) { return null; }
+
         let response = await sendQuery({
             model: 'gpt-4',
-            temperature: 0.8,
+            temperature: 1,
             max_tokens: 2048,
-            top_p: 0.8,
+            top_p: 1,
             messages: [{
                 role: 'system',
                 content: this.prompt
@@ -69,7 +69,7 @@ export default class SPS {
                 await this.iterate(semanticActionHandler);
             }
         } catch (e) { 
-            await this.iterate(semanticActionHandler);
+            console.log(e);
         }
     }
 
@@ -84,9 +84,7 @@ export default class SPS {
                 console.log('Execution stopped');
                 return result;
             }
-            if (this._interrupted) {
-                this._executing = false;
-                this._interrupted = false;
+            if (!this._executing) {
                 return result;
             } 
             return await _run();

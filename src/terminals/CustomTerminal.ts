@@ -77,22 +77,24 @@ export class CustomPseudoTerminal {
     }
 
     startSpinner() {
-        (this._spinner as any).handle = setInterval(() => {
-            this._onDidWrite.fire(
-                `\r${this._spinner.frames[this._spinner.currentFrame]}`
-            );
-            this._spinner.currentFrame =
-                (this._spinner.currentFrame + 1) % this._spinner.frames.length;
-        }, this._spinner.interval);
-    }
-
-    stopSpinner() {
-        if (this._spinner.handle) {
-            clearInterval(this._spinner.handle);
-            this._spinner.handle = null;
-            this._onDidWrite.fire("\r" + " ".repeat(this._spinner.frames.length) + "\r");
+		const s = this._spinner;
+        if(!(s as any).handle) {
+            (s as any).handle = setInterval(() => {
+                this.output(`\r${s.frames[s.currentFrame++]}`);
+                s.currentFrame %= s.frames.length;
+            }, s.interval);
         }
-    }
+	}
+
+	stopSpinner() {
+		const s = this._spinner;
+		if (s.handle) {
+			clearInterval(s.handle);
+			s.handle = null;
+			this.output("\r" + " ".repeat(s.frames.length) + "\r");
+		}
+	}
+
 
     open(initialDimensions: vscode.TerminalDimensions | undefined): void {
         // Initialize your LLM here, connect to it or start it

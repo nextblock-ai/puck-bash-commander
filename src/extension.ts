@@ -2,7 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import SetOpenAIKeyCommand from './commands/SetOpenAIKeyCommand';
-import BashCommanderCommand from './commands/BashCommanderCommand';
 import * as logger from './utils/logger';
 import PuckREPLCommand from './commands/PuckREPLCommand';
 
