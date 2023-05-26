@@ -1,6 +1,6 @@
 # Puck - Bash Commander - (Beta Version)
 
-[![Discord Follow](https://dcbadge.vercel.app/api/server/wCkJFveHeF?style=flat)](https://discord.gg/wCkJFveHeF)
+[![Discord Follow](https://dcbadge.vercel.app/api/server/wCkJFveHeF?style=flat)](https://discord.gg/hbAesba22n)
 [![Twitter Follow](https://img.shields.io/twitter/url/https/twitter.com/bukotsunikki.svg?style=social&label=Follow%20%40NextBlockAI)](https://twitter.com/nextblockai)
 
 Puck - Bash Commander is an extension for Visual Studio Code that brings the power of AI to your development environment. It is part of the Puck suite of AI development tools. Bash Commander uses an advanced AI model to help you execute complex development tasks quickly and efficiently.
@@ -31,7 +31,7 @@ Puck - Bash Commander is an extension for Visual Studio Code that brings the pow
 1. Install the Puck - [Bash Commander extension](https://marketplace.visualstudio.com/items?itemName=NextBlock.puck-bash-commander) from the Visual Studio Code marketplace.
 2. Reload Visual Studio Code
 3. Get Your [Open AI API Key](https://platform.openai.com/account/api-keys)
-4. Add your own Open AI API key by running the  the “Set Open AI Key” command from the command palette (CMD+shift+P).
+4. Add your own Open AI API key by running the  the “Set Open AI Key” command from the command palette (Mac: CMD+shift+P) (Windows: F1).
 5. Reload Visual Studio Code
 6. Open a  [new or existing project](https://code.visualstudio.com/docs/editor/workspaces) 
 7. Launch the Bash Commander terminal by running the "Open Bash Commander" command from the command palette (CMD+shift+P).
