@@ -54,6 +54,7 @@ export default class SPS {
             })) as any]
         });
         try {
+            response = response.messages[response.messages.length - 1].content;
             response += '\n';
             const { grammar, semantics } = this.loadGrammar(this.grammarFile);
             const ohmParser = semantics.addOperation("toJSON", this.semanticActionHandler);

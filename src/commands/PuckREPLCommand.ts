@@ -25,36 +25,40 @@ function colorText(text: string, colorIndex: number): string {
 class AnimatedTerminalBar {
     private static readonly BAR_LENGTH = 20;
     private static readonly BAR_CHAR = '█';
-    spinner: any = {
-        interval: 50,
-        handle: null,
-    };
+    spinner: any = { interval: 50, handle: null };
+
     constructor(public emitter: vscode.EventEmitter<string>) { }
 
-    private getColor(colorIndex: number, colorRange: number): string {
-        const red = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange)) + 128);
-        const green = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange) - (2 * Math.PI) / 3) + 128);
-        const blue = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange) - (4 * Math.PI) / 3) + 128);
-        return `48;2;${red};${green};${blue}`;
+    private getGradientColor(index: number): number {
+        return (index % 6) + 1;
     }
 
-    private colorText(text: string, color: string): string {
-      return `\x1b[${color}m${text}\x1b[0m`;
+    private colorText(text: string, offset = 0): string {
+        let output = '';
+        const total = text.length;
+        for (let i = 0; i < total; i++) {
+            const char = text.charAt(i);
+            if (char === ' ' || char === '\r' || char === '\n') {
+                output += char;
+            } else {
+                const colorIndex = this.getGradientColor(i + offset);
+                output += `\x1b[3${colorIndex}m${text.charAt(i)}\x1b[0m`;
+            }
+        }
+        return output;
     }
 
-    private getBar(colorIndex: number, colorRange: number) {
+    private getBar(offset: number) {
         const bar = AnimatedTerminalBar.BAR_CHAR.repeat(AnimatedTerminalBar.BAR_LENGTH);
-        const color = this.getColor(colorIndex, colorRange);
-        return this.colorText(bar, color);
+        return this.colorText(bar, offset);
     }
 
     public start() {
-        let colorIndex = 0;
-        const colorRange = 256;
+        let offset = 0;
         this.spinner.handle = setInterval(() => {
-            const bar = this.getBar(colorIndex, colorRange);
+            const bar = this.getBar(offset);
             this.emitter.fire('\r' + bar);
-            colorIndex = (colorIndex + 1) % colorRange;
+            offset = (offset + 1) % (AnimatedTerminalBar.BAR_LENGTH * 6);
         }, this.spinner.interval);
         return () => clearInterval(this.spinner.handle);
     }
@@ -68,6 +72,7 @@ class AnimatedTerminalBar {
     }
 }
 
+
 export default class PuckREPLCommand extends Command {
 
 	working = false;
@@ -78,7 +83,7 @@ export default class PuckREPLCommand extends Command {
 	sps: any;
 	private bar: AnimatedTerminalBar;
 	projectRoot: string | undefined;
-		
+
 
 	_spinner = {
 		interval: 150,
@@ -179,7 +184,7 @@ export default class PuckREPLCommand extends Command {
 						line = this.history[this.history.length - 2];
 					}
 					we.fire('\x1b[2K');
-					we.fire('\r>>> ' + line);
+					we.fire('\r>> ' + line);
 					return;
 				}
 
@@ -190,7 +195,7 @@ export default class PuckREPLCommand extends Command {
 					}
 					line = this.history[this.history.length - 1];
 					we.fire('\x1b[2K');
-					we.fire('\r>>> ' + line);
+					we.fire('\r>> ' + line);
 					return;
 				}
 
@@ -208,20 +213,24 @@ export default class PuckREPLCommand extends Command {
 		} else {
 			we.fire('^C\r\n');
 			we.fire('KeyboardInterrupt\r\n');
-			we.fire('>>> ');
+			we.fire('>> ');
 		}
 	}
 	async handleInput(line: string) {
 		this.sps = new SemanticPrompt(this.projectRoot || '');
+		//this.sps = new CodeEnhancer(this.writeEmitter);
 		this.bar.start();
+		// const result = await this.sps.handleUserRequest(line);
+
 		this.sps.messages.push({
 			role: 'user',
 			content: '📮 ' + line,
 		});
 		const result = await this.sps.execute();
+
 		this.bar.stop();
 		this.writeEmitter.fire(result);
-		this.writeEmitter.fire('>>> ');
+		this.writeEmitter.fire('>> ');
 		this.working = false;
 	}
 	startSpinner() {
@@ -248,7 +257,7 @@ export default class PuckREPLCommand extends Command {
 		} else {
 			this.writeEmitter.fire('^C\r\n');
 			this.writeEmitter.fire('KeyboardInterrupt\r\n');
-			this.writeEmitter.fire('>>> ');
+			this.writeEmitter.fire('>> ');
 		}
 	}
 	clear() {

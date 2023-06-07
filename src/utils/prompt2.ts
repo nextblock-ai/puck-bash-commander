@@ -96,8 +96,9 @@ const config = {
         updateSemanticPrompt(semanticPrompt, config.delimiters[0].emoji, message.message);
 
         // save the file
-        const [filename, ...filecontent] = message.message;
-        fs.writeFileSync(semanticPrompt._relPath(filename), filecontent.join("\n"));
+        let [filename, ...filecontent] = message.message;
+        const file = semanticPrompt._relPath(filename)
+        fs.writeFileSync(file, filecontent.join("\n"));
 
       }],
     },
@@ -140,7 +141,7 @@ const config = {
         // add the command message from the assistant to the conversation
         const [bashCommand] = message.message;
         updateSemanticPrompt(semanticPrompt, config.delimiters[3].emoji, message.message);
-
+        process.chdir(semanticPrompt.projectRoot);
         // execute the command
         const result = executeShellCommands(bashCommand);
         if (result) {
@@ -264,7 +265,7 @@ export default class SemanticPrompt {
   _iterator = async (...children: any) => {
     const recs = children.map(function (child: any) { return child.toJSON(); });
     const messageSource = children[0].source.sourceString;
-    const messageCommands = this._parseCommands(messageSource, this.delimiters.map((d: any) => d.delimiter));
+    const messageCommands = this._parseCommands(messageSource, config.delimiters.map((d: any) => d.emoji));
     this.onProcessMessages(messageCommands, recs);
   }
 
@@ -341,12 +342,23 @@ export default class SemanticPrompt {
       let freeTokens = 8192 - tokenCount;
       freeTokens = freeTokens > 2048 ? 2048 : freeTokens;
       let response: any;
+      if(this.messages.length === 0) {
+        return {
+          error: "No messages to process"
+        }
+      }
+      if(this.messages[0].role !== 'system') {
+        this.messages.unshift({
+          role: 'system',
+          content: this.prompt
+        });
+      }
       try {
         response = await sendQuery({
           messages: this.messages,
           settings: {
             key: 'key',
-            temperature: 0.9,
+            temperature: 1,
             max_tokens: freeTokens,
           }
         });
