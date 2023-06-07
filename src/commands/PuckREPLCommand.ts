@@ -7,6 +7,7 @@ import * as blessed from "blessed";
 import { Command } from "../utils/Command";
 import CodeEnhancer from "../agents/coder";
 import { TextualUI } from "../utils/ui";
+import SemanticPrompt from "../utils/prompt2";
 
 function colorText(text: string, colorIndex: number): string {
 	let output = '';
@@ -22,110 +23,50 @@ function colorText(text: string, colorIndex: number): string {
 }
 
 class AnimatedTerminalBar {
-	private static readonly BAR_LENGTH = 20;
-	private static readonly BAR_CHAR = '█';
-	spinner: any = {
-		interval: 150,
-		handle: null,
-	};
-	constructor(public emitter: vscode.EventEmitter<string>) { }
-	private getColor(colorIndex: number, colorRange: number, startColor: number[]) {
-		const color = startColor.map((c, i) => {
-			const range = colorRange / startColor.length;
-			const colorValue = c + colorIndex + i * 2;
-			return colorValue > 255 ? 255 : colorValue;
-		});
-		return `rgb(${color.join(',')})`;
-	}
-	private colorText(text: string, colorIndex: number): string {
-		let output = '';
-		for (let i = 0; i < text.length; i++) {
-			const char = text.charAt(i);
-			if (char === ' ' || char === '\r' || char === '\n') {
-				output += char;
-			} else {
-				output += `\x1b[3${colorIndex}m${text.charAt(i)}\x1b[0m`;
-			}
-		}
-		return output;
-	}
-	private getBar(colorIndex: number, colorRange: number, startColor: number[]) {
-		const color = this.getColor(colorIndex, colorRange, startColor);
-		const bar = AnimatedTerminalBar.BAR_CHAR.repeat(AnimatedTerminalBar.BAR_LENGTH);
-		return this.colorText(bar, colorIndex);
-	}
-	public start() {
-		let colorIndex = 0;
-		const colorRange = 256;
-		const startColor = [0, 0, 0];
-		this.spinner.handle = setInterval(() => {
-			const bar = this.getBar(colorIndex, colorRange, startColor);
-			this.emitter.fire('\r' + bar);
-			colorIndex = (colorIndex + 1) % colorRange;
-		}, 100);
-		return () => clearInterval(this.spinner.interval);
-	}
-	public stop() {
-		if (this.spinner.handle) {
-			clearInterval(this.spinner.handle);
-			this.spinner.handle = null;
-			this.emitter.fire('\r' + ' '.repeat(AnimatedTerminalBar.BAR_LENGTH) + '\r\n');
-		}
-	}
+    private static readonly BAR_LENGTH = 20;
+    private static readonly BAR_CHAR = '█';
+    spinner: any = {
+        interval: 50,
+        handle: null,
+    };
+    constructor(public emitter: vscode.EventEmitter<string>) { }
+
+    private getColor(colorIndex: number, colorRange: number): string {
+        const red = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange)) + 128);
+        const green = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange) - (2 * Math.PI) / 3) + 128);
+        const blue = Math.round(127 * Math.sin(colorIndex * (Math.PI / colorRange) - (4 * Math.PI) / 3) + 128);
+        return `48;2;${red};${green};${blue}`;
+    }
+
+    private colorText(text: string, color: string): string {
+      return `\x1b[${color}m${text}\x1b[0m`;
+    }
+
+    private getBar(colorIndex: number, colorRange: number) {
+        const bar = AnimatedTerminalBar.BAR_CHAR.repeat(AnimatedTerminalBar.BAR_LENGTH);
+        const color = this.getColor(colorIndex, colorRange);
+        return this.colorText(bar, color);
+    }
+
+    public start() {
+        let colorIndex = 0;
+        const colorRange = 256;
+        this.spinner.handle = setInterval(() => {
+            const bar = this.getBar(colorIndex, colorRange);
+            this.emitter.fire('\r' + bar);
+            colorIndex = (colorIndex + 1) % colorRange;
+        }, this.spinner.interval);
+        return () => clearInterval(this.spinner.handle);
+    }
+
+    public stop() {
+        if (this.spinner.handle) {
+            clearInterval(this.spinner.handle);
+            this.spinner.handle = null;
+            this.emitter.fire('\r' + ' '.repeat(AnimatedTerminalBar.BAR_LENGTH) + '\r\n');
+        }
+    }
 }
-
-
-class BlessedTerminal implements vscode.Pseudoterminal {
-
-	private writeEmitter = new vscode.EventEmitter<string>();
-	onDidWrite: vscode.Event<string> = this.writeEmitter.event;
-	handleInput = this.writeEmitter.fire;
-	private semanticPrompt: CodeEnhancer;
-	private ui: TextualUI;
-	private bar: AnimatedTerminalBar;
-
-	constructor() {
-		this.ui = new TextualUI(this.writeEmitter);
-		this.semanticPrompt = new CodeEnhancer(this.writeEmitter);
-		this.bar = new AnimatedTerminalBar(this.writeEmitter);
-	}
-
-	open(initialDimensions: vscode.TerminalDimensions | undefined): void {
-		this.ui.screen.key(['C-c'], () => {
-			this.ui.screen.destroy();
-			this.writeEmitter.dispose();
-		});
-
-		this.ui.run();
-		// this.ui.screen.append(blessed.box({
-		// 	top: 'center',
-		// 	left: 'center',
-		// 	width: '50%',
-		// 	height: '50%',
-		// 	content: 'Hello {bold}world{/bold}!',
-		// 	tags: true,
-		// 	border: {
-		// 		type: 'line'
-		// 	},
-		// 	style: {
-		// 		fg: 'white',
-		// 		bg: 'magenta',
-		// 		border: {
-		// 			fg: '#f0f0f0'
-		// 		},
-		// 		hover: {
-		// 			bg: 'green'
-		// 		}
-		// 	}
-		// }));
-	}
-
-	close(): void {
-		this.ui.screen.destroy();
-	}
-	// Other methods to implement
-}
-
 
 export default class PuckREPLCommand extends Command {
 
@@ -135,8 +76,8 @@ export default class PuckREPLCommand extends Command {
 	history: string[] = [];
 	writeEmitter: vscode.EventEmitter<string>;
 	sps: any;
-	ui: TextualUI;
 	private bar: AnimatedTerminalBar;
+	projectRoot: string | undefined;
 		
 
 	_spinner = {
@@ -176,16 +117,14 @@ export default class PuckREPLCommand extends Command {
 
 		let line = '';
 		const we = this.writeEmitter = new vscode.EventEmitter<string>();
-
-		this.ui = new TextualUI(we);
 		this.bar = new AnimatedTerminalBar(we);
+		this.projectRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
 		this.pty = {
 
 			onDidWrite: we.event,
 			open: () => {
 				we.fire('Bash Commander v0.0.4.\r\n\r\n>>')
-				this.ui.run();
 			},
 			close: () => { /* noop*/ },
 			handleInput: async (data: string) => {
@@ -273,9 +212,13 @@ export default class PuckREPLCommand extends Command {
 		}
 	}
 	async handleInput(line: string) {
-		this.sps = new CodeEnhancer(this.writeEmitter);
+		this.sps = new SemanticPrompt(this.projectRoot || '');
 		this.bar.start();
-		const result = await this.sps.handleUserRequest(line);
+		this.sps.messages.push({
+			role: 'user',
+			content: '📮 ' + line,
+		});
+		const result = await this.sps.execute();
 		this.bar.stop();
 		this.writeEmitter.fire(result);
 		this.writeEmitter.fire('>>> ');

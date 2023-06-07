@@ -3,7 +3,7 @@
     "publisher": "NextBlock",
     "displayName": "Puck - Bash Commander",
     "description": "Part of the Puck suite of AI development tools",
-    "version": "0.0.5",
+    "version": "0.0.8",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
@@ -14,35 +14,19 @@
     "categories": [
         "Other"
     ],
+    "extensionDependencies": [
+        "NextBlock.puck-core"
+    ],
     "contributes": {
         "configuration": {
             "title": "puck Settings",
             "properties": {
-                "puck.apikey": {
-                    "type": "password",
-                    "default": "sk-",
-                    "description": "API key for the OpenAI GPT service."
-                },
-                "puck.temperature": {
-                    "type": "number",
-                    "default": 0.7,
-                    "description": "Default temperature to use in queries"
-                },
-                "puck.maxTokens": {
-                    "type": "number",
-                    "default": 2048,
-                    "description": "Default max tokens to use in queries"
-                }
             }
         },
         "commands": [
             {
                 "command": "puck.bashCommander",
-                "title": "Open Bash Commander"
-            },
-            {
-                "command": "puck.setOpenAIKey",
-                "title": "Set OpenAI Key"
+                "title": "Puck - Open Bash Commander"
             }
         ]
     },

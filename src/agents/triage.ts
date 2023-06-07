@@ -1,4 +1,4 @@
-import { sendQuery } from "../utils/gpt";
+import { sendQuery } from "../utils/core";
 
 export default async function triage(inputRequest: string): Promise<string> {
 	return sendQuery({

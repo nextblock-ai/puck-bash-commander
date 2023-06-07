@@ -3,7 +3,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Ohm from 'ohm-js';
 import * as fs from 'fs';
-import { GPTChatMessage, sendQuery } from '../gpt';
+import { GPTChatMessage } from '../../types';
+import { sendQuery } from '../core';
 
 // an action handler for a semantic action
 export type SemanticActionHandler = Ohm.ActionDict<unknown>;

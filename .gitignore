@@ -4,3 +4,6 @@ node_modules
 .vscode-test/
 *.vsix
 .DS_Store
+history.json
+conversation.json
+puck.log
