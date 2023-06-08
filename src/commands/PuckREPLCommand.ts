@@ -6,6 +6,27 @@ import * as vscode from "vscode";
 import { Command } from "../utils/Command";
 import { getSemanticAgent } from "../utils/core";
 
+function createProjectFileTree(projectRoot: string) {
+	const fs = require('fs');
+	const path = require('path');
+	const walk = (dir: string, tree: any) => {
+		const files = fs.readdirSync(dir);
+		files.forEach((file: string) => {
+			const fpath = path.join(dir, file);
+			const stats = fs.statSync(fpath);
+			if (stats.isDirectory()) {
+				tree[file] = {};
+				walk(fpath, tree[file]);
+			} else {
+				tree[file] = null;
+			}
+		});
+	};
+	const tree: any = {};
+	walk(projectRoot, tree);
+	return tree;
+}
+
 function colorText(text: string, colorIndex: number): string {
 	let output = '';
 	for (let i = 0; i < text.length; i++) {
@@ -217,7 +238,9 @@ export default class PuckREPLCommand extends Command {
 		this.projectRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 		this.sps = await getSemanticAgent(this.writeEmitter);
 		this.bar.start();
+		const fileTree = createProjectFileTree(this.projectRoot || '');
 		this.sps.messages.push({ role: 'user', content: '📮 ' + line, });
+		this.sps.messages.push({ role: 'user', content: '🌳 ' + Object.keys(fileTree).join('\n'), });
 		this.sps.projectRoot = this.projectRoot;
 		await this.sps.execute();
 		for(const message of this.sps.result) {
