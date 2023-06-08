@@ -375,8 +375,6 @@ export default class SemanticPrompt {
           this._ohmParser(match).toJSON();
           if (this.completed) {
             const r = this.result;
-            this.result = [];
-            this.messages = [];
             this.completed = false;
             return r;
           } else {

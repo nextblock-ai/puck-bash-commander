@@ -16,6 +16,6 @@ export async function streamQuery(req: any, onUpdate: any, onFinish: any) {
     return coreApi.core.streamRequest(req, onUpdate, onFinish);
 }
 
-export async function getSemanticAgent() {
-    return coreApi.SemanticAgentProvider.getInstance().createSemanticAgent();
+export async function getSemanticAgent(writeEmitter: vscode.EventEmitter<string>) {
+    return coreApi.SemanticAgentProvider.getInstance().createSemanticAgent(writeEmitter);
 }

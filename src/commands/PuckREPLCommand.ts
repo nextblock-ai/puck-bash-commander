@@ -3,11 +3,8 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
-import * as blessed from "blessed";
 import { Command } from "../utils/Command";
-import CodeEnhancer from "../agents/coder";
-import { TextualUI } from "../utils/ui";
-import SemanticPrompt from "../utils/prompt2";
+import { getSemanticAgent } from "../utils/core";
 
 function colorText(text: string, colorIndex: number): string {
 	let output = '';
@@ -217,19 +214,16 @@ export default class PuckREPLCommand extends Command {
 		}
 	}
 	async handleInput(line: string) {
-		this.sps = new SemanticPrompt(this.projectRoot || '');
-		//this.sps = new CodeEnhancer(this.writeEmitter);
+		this.projectRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+		this.sps = await getSemanticAgent(this.writeEmitter);
 		this.bar.start();
-		// const result = await this.sps.handleUserRequest(line);
-
-		this.sps.messages.push({
-			role: 'user',
-			content: '📮 ' + line,
-		});
-		const result = await this.sps.execute();
-
+		this.sps.messages.push({ role: 'user', content: '📮 ' + line, });
+		this.sps.projectRoot = this.projectRoot;
+		await this.sps.execute();
+		for(const message of this.sps.result) {
+			this.writeEmitter.fire(message + '\r\n');
+		}
 		this.bar.stop();
-		this.writeEmitter.fire(result);
 		this.writeEmitter.fire('>> ');
 		this.working = false;
 	}
