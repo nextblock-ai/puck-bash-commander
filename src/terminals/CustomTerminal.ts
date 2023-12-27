@@ -39,7 +39,7 @@ export class CustomPseudoTerminal {
     private _buffer = "";
     private _motd = "Custom Terminal 0.0.1 - enter a shell command\r\n";
     private _prompt = "$ ";
-    private _dimensions: vscode.TerminalDimensions | undefined;
+    private _dimensions: any
     private _inputResolver: ((value: string) => void) | null = null;
 
     public readonly _ansiColors = {
@@ -96,7 +96,7 @@ export class CustomPseudoTerminal {
 	}
 
 
-    open(initialDimensions: vscode.TerminalDimensions | undefined): void {
+    open(initialDimensions: any): void {
         // Initialize your LLM here, connect to it or start it
         this._onDidWrite.fire(this._motd);
 

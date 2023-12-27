@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
 import { Command } from "../utils/Command";
+import { setOpenAIKey } from "../configuration";
 
 const org = "puck";
 
@@ -19,7 +20,7 @@ export default class SetOpenAIKeyCommand extends Command {
             password: true,
         });
         if (apiKey) {
-            setOpenAIKey(apiKey);
+            setOpenAIKey('puck', apiKey);
             vscode.window.showInformationMessage('OpenAI API key saved successfully');
         } else {
             vscode.window.showErrorMessage('Invalid API key. Please try again');
@@ -28,24 +29,6 @@ export default class SetOpenAIKeyCommand extends Command {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const command = new SetOpenAIKeyCommand("setOpenAIKey", "Set OpenAI Key", context);
+    new SetOpenAIKeyCommand("setOpenAIKey", "Set OpenAI Key", context);
 }
 
-export function getOpenAIKey(): string {
-    const config = vscode.workspace.getConfiguration(org);
-    return config.get('apikey') || '';
-}
-
-async function setOpenAIKey(openAIKey: string): Promise<void> {
-    try {
-        await vscode.workspace.getConfiguration(org).update('apikey', openAIKey, vscode.ConfigurationTarget.Global);
-        const config = vscode.workspace.getConfiguration(org);
-        if (config.has('apikey')) {
-            vscode.window.showInformationMessage('OpenAI API key saved successfully');
-        } else {
-            vscode.window.showErrorMessage('Failed to save OpenAI API key');
-        }
-    } catch (error: any) {
-        vscode.window.showErrorMessage(`Error updating configuration: ${error.message}`);
-    }
-}

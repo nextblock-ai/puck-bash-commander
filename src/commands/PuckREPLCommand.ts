@@ -4,28 +4,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
 import { Command } from "../utils/Command";
-import { getSemanticAgent } from "../utils/core";
 
-function createProjectFileTree(projectRoot: string) {
-	const fs = require('fs');
-	const path = require('path');
-	const walk = (dir: string, tree: any) => {
-		const files = fs.readdirSync(dir);
-		files.forEach((file: string) => {
-			const fpath = path.join(dir, file);
-			const stats = fs.statSync(fpath);
-			if (stats.isDirectory()) {
-				tree[file] = {};
-				walk(fpath, tree[file]);
-			} else {
-				tree[file] = null;
-			}
-		});
-	};
-	const tree: any = {};
-	walk(projectRoot, tree);
-	return tree;
-}
+const fs = require('fs');
+const path = require('path');
+
+const { Assistant, Thread, loadNewPersona } = require( '@nomyx/assistant');
+const { tools, schemas } = require('../tools/index');
 
 function colorText(text: string, colorIndex: number): string {
 	let output = '';
@@ -40,56 +24,75 @@ function colorText(text: string, colorIndex: number): string {
 	return output;
 }
 
-class AnimatedTerminalBar {
-    private static readonly BAR_LENGTH = 20;
-    private static readonly BAR_CHAR = '█';
-    spinner: any = { interval: 50, handle: null };
+let threadId: any = undefined;
 
-    constructor(public emitter: vscode.EventEmitter<string>) { }
+import process from 'process';
+import readline from 'readline';
+import { getOpenAIKey } from "../configuration";
 
-    private getGradientColor(index: number): number {
-        return (index % 6) + 1;
-    }
-
-    private colorText(text: string, offset = 0): string {
-        let output = '';
-        const total = text.length;
-        for (let i = 0; i < total; i++) {
-            const char = text.charAt(i);
-            if (char === ' ' || char === '\r' || char === '\n') {
-                output += char;
-            } else {
-                const colorIndex = this.getGradientColor(i + offset);
-                output += `\x1b[3${colorIndex}m${text.charAt(i)}\x1b[0m`;
-            }
-        }
-        return output;
-    }
-
-    private getBar(offset: number) {
-        const bar = AnimatedTerminalBar.BAR_CHAR.repeat(AnimatedTerminalBar.BAR_LENGTH);
-        return this.colorText(bar, offset);
-    }
-
-    public start() {
-        let offset = 0;
-        this.spinner.handle = setInterval(() => {
-            const bar = this.getBar(offset);
-            this.emitter.fire('\r' + bar);
-            offset = (offset + 1) % (AnimatedTerminalBar.BAR_LENGTH * 6);
-        }, this.spinner.interval);
-        return () => clearInterval(this.spinner.handle);
-    }
-
-    public stop() {
-        if (this.spinner.handle) {
-            clearInterval(this.spinner.handle);
-            this.spinner.handle = null;
-            this.emitter.fire('\r' + ' '.repeat(AnimatedTerminalBar.BAR_LENGTH) + '\r\n');
-        }
-    }
+interface SpinnerConfig {
+    title: string;
+    interval: number;
+    frames: string[];
 }
 
+export class Spinner {
+    private title: string;
+    private interval: number;
+    private frames: string[];
+    private currentIndex: number = 0;
+    private timer: NodeJS.Timeout | null = null;
+	private writeEmitter: any;
+
+    constructor(writeEmitter: any, config: SpinnerConfig) {
+        this.title = config.title;
+        this.interval = config.interval;
+        this.frames = config.frames;
+		this.writeEmitter = writeEmitter;
+    }
+
+    public setTitle(newTitle: string) {
+        this.title = newTitle;
+    }
+
+    public start(): void {
+        this.stop();
+        this.timer = setInterval(() => {
+            const frame = this.frames[this.currentIndex];
+            this.renderFrame(frame);
+            this.currentIndex = (this.currentIndex + 1) % this.frames.length;
+        }, this.interval);
+    }
+
+    public stop(): void {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+            readline.clearLine(process.stdout, 0); // Clear the line
+            readline.cursorTo(process.stdout, 0); // Move the cursor to the beginning of the line
+            this.writeEmitter.fire('\n'); // Move the cursor to the next line
+        }
+    }
+
+    private renderFrame(frame: string) {
+        readline.clearLine(process.stdout, 0); // Clear the entire line
+        readline.cursorTo(process.stdout, 0); // Move the cursor to the beginning of the line
+        this.writeEmitter.fire(`${frame} ${this.title}\r`); // Write the frame and title
+    }
+
+    public success(message?: string): void {
+        this.persist('✔', message);
+    }
+
+    public error(message?: string): void {
+        this.persist('✘', message);
+    }
+
+    private persist(icon: string, message?: string): void {
+        this.stop();
+        this.writeEmitter.fire(`${icon} ${message || ''}\n`); // Write the message to stdout with an icon and start a new line
+    }
+}
 
 export default class PuckREPLCommand extends Command {
 
@@ -98,56 +101,99 @@ export default class PuckREPLCommand extends Command {
 	pty: any;
 	history: string[] = [];
 	writeEmitter: vscode.EventEmitter<string>;
-	sps: any;
-	private bar: AnimatedTerminalBar;
+	private spinner: Spinner;
+	private assistant: any;
 	projectRoot: string | undefined;
 
-
-	_spinner = {
-		interval: 150,
-		frames: [
-			"🕐",
-			"🕑",
-			"🕒",
-			"🕓",
-			"🕔",
-			"🕕",
-			"🕖",
-			"🕗",
-			"🕘",
-			"🕙",
-			"🕚",
-			"🕛",
-			"🕜",
-			"🕝",
-			"🕞",
-			"🕟",
-			"🕠",
-			"🕡",
-			"🕢",
-			"🕣",
-			"🕤",
-			"🕥",
-			"🕦"
-		],
-		currentFrame: 0,
-		handle: null,
-	};
-
-	constructor(commandId: string, title: string, context: vscode.ExtensionContext) {
+	constructor(commandId: string, title: string, context: any) {
 
 		super(commandId, title, context);
 
+		// add a button to the status bar
+		const button = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+		button.text = 'Bash Commander';
+		button.command = commandId;
+		button.show();
+		
 		let line = '';
 		const we = this.writeEmitter = new vscode.EventEmitter<string>();
-		this.bar = new AnimatedTerminalBar(we);
+		this.spinner = new Spinner(this.writeEmitter, {
+			title: "loading",
+			interval: 120,
+			frames: [
+				"䷀",
+				"䷁",
+				"䷂",
+				"䷃",
+				"䷄",
+				"䷅",
+				"䷆",
+				"䷇",
+				"䷈",
+				"䷉",
+				"䷊",
+				"䷋",
+				"䷌",
+				"䷍",
+				"䷎",
+				"䷏",
+				"䷐",
+				"䷑",
+				"䷒",
+				"䷓",
+				"䷔",
+				"䷕",
+				"䷖",
+				"䷗",
+				"䷘",
+				"䷙",
+				"䷚",
+				"䷛",
+				"䷜",
+				"䷝",
+				"䷞",
+				"䷟",
+				"䷠",
+				"䷡",
+				"䷢",
+				"䷣",
+				"䷤",
+				"䷥",
+				"䷦",
+				"䷧",
+				"䷨",
+				"䷩",
+				"䷪",
+				"䷫",
+				"䷬",
+				"䷭",
+				"䷮",
+				"䷯",
+				"䷰",
+				"䷱",
+				"䷲",
+				"䷳",
+				"䷴",
+				"䷵",
+				"䷶",
+				"䷷",
+				"䷸",
+				"䷹",
+				"䷺",
+				"䷻",
+				"䷼",
+				"䷽",
+				"䷾",
+				"䷿"
+			]
+		  });
 		this.projectRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 
 		this.pty = {
 
 			onDidWrite: we.event,
 			open: () => {
-				we.fire('Bash Commander v0.0.4.\r\n\r\n>>')
+				we.fire('Bash Commander v0.0.4.\r\n\r\n> ')
 			},
 			close: () => { /* noop*/ },
 			handleInput: async (data: string) => {
@@ -172,7 +218,7 @@ export default class PuckREPLCommand extends Command {
 						line = '';
 						return;
 					}
-					we.fire(`\r\n${colorText(line, 1)}\r\n\n`);
+					we.fire(`\r\n`);
 					this.working = true;
 					await this.handleInput(line);
 					line = '';
@@ -202,7 +248,7 @@ export default class PuckREPLCommand extends Command {
 						line = this.history[this.history.length - 2];
 					}
 					we.fire('\x1b[2K');
-					we.fire('\r>> ' + line);
+					we.fire('\r> ' + line);
 					return;
 				}
 
@@ -213,7 +259,7 @@ export default class PuckREPLCommand extends Command {
 					}
 					line = this.history[this.history.length - 1];
 					we.fire('\x1b[2K');
-					we.fire('\r>> ' + line);
+					we.fire('\r> ' + line);
 					return;
 				}
 
@@ -231,50 +277,72 @@ export default class PuckREPLCommand extends Command {
 		} else {
 			we.fire('^C\r\n');
 			we.fire('KeyboardInterrupt\r\n');
-			we.fire('>> ');
+			we.fire('> ');
 		}
 	}
 	async handleInput(line: string) {
 		this.projectRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-		this.sps = await getSemanticAgent(this.writeEmitter);
-		this.bar.start();
-		const fileTree = createProjectFileTree(this.projectRoot || '');
-		this.sps.messages.push({ role: 'user', content: '📮 ' + line, });
-		this.sps.messages.push({ role: 'user', content: '🌳 ' + Object.keys(fileTree).join('\n'), });
-		this.sps.projectRoot = this.projectRoot;
-		await this.sps.execute();
-		for(const message of this.sps.result) {
-			this.writeEmitter.fire(message + '\r\n');
+		this.spinner.start();
+
+		const { getOpenAIKey, getConfiguration } = require('../configuration');
+
+		const apiKey = getOpenAIKey('puck');
+		const config = getConfiguration('puck');
+
+		const getAssistant = async (
+			name: string = 'vscode-assistant', 
+			model: string = 'gpt-4-1106-preview',
+			persona: string = 'puck',
+			threadId: string | undefined = undefined
+			): Promise<any> => {
+			if(persona === 'puck') persona = await loadNewPersona(tools);
+			const _getAssistant = async (threadId: any) => {
+				const assistants = await Assistant.list(apiKey);
+				let assistant = assistants.find((a: any) => a.name === name);
+				if (!assistant) {
+					assistant = await Assistant.create(
+						name,
+						await loadNewPersona(tools),
+						schemas,
+						model,
+						threadId
+					);
+					return assistant;
+				}
+				threadId && (assistant.thread = await Thread.get(threadId));
+				return assistant;
+			}
+			return await _getAssistant(threadId);
 		}
-		this.bar.stop();
-		this.writeEmitter.fire('>> ');
+
+		const assistant = await getAssistant(
+			'vscode-assistant',
+			config.model,
+			await loadNewPersona(schemas),
+			threadId,
+		);
+		let response = await assistant.run(line, tools, schemas, apiKey, (event: any, message: any) => {
+			this.writeEmitter.fire(event + '\r\n');
+		});
+		// replace \n with \r\n
+		response = response && response.replace(/\n/g, '\r\n');
+		this.writeEmitter.fire(response + '\r\n');
+		threadId = assistant.thread.id;
+
+		this.spinner.stop();
+		this.writeEmitter.fire('> ');
 		this.working = false;
-	}
-	startSpinner() {
-		const s = this._spinner;
-		(s as any).handle = setInterval(() => {
-			this.writeEmitter.fire(`\r${s.frames[s.currentFrame++]}`);
-			s.currentFrame %= s.frames.length;
-		}, s.interval);
-	}
-	stopSpinner() {
-		const s = this._spinner;
-		if (s.handle) {
-			clearInterval(s.handle);
-			s.handle = null;
-			this.writeEmitter.fire("\r" + " ".repeat(s.frames.length) + "\r");
-		}
 	}
 	processCtrlC() {
 		if (this.working) {
-			this.stopSpinner();
+			this.spinner.stop();
 			this.writeEmitter.fire('\r\n');
 			this.writeEmitter.fire('KeyboardInterrupt\r\n');
 			this.working = false;
 		} else {
 			this.writeEmitter.fire('^C\r\n');
 			this.writeEmitter.fire('KeyboardInterrupt\r\n');
-			this.writeEmitter.fire('>> ');
+			this.writeEmitter.fire('> ');
 		}
 	}
 	clear() {
@@ -282,7 +350,7 @@ export default class PuckREPLCommand extends Command {
 	}
 
 	async execute() {
-		const terminal = vscode.window.createTerminal({ name: `Bash Commander`, pty: this.pty });
+		const terminal = (vscode.window as any).createTerminal({ name: `Bash Commander`, pty: this.pty });
 		if (terminal) {
 			terminal.show();
 			return;

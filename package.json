@@ -3,7 +3,7 @@
     "publisher": "NextBlock",
     "displayName": "Puck - Bash Commander",
     "description": "Part of the Puck suite of AI development tools",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
@@ -14,21 +14,40 @@
     "categories": [
         "Other"
     ],
-    "extensionDependencies": [
-        "NextBlock.puck-core"
-    ],
     "contributes": {
         "configuration": {
             "title": "puck Settings",
-            "properties": {
-            }
+            "properties": {}
         },
         "commands": [
             {
-                "command": "puck.bashCommander",
-                "title": "Puck - Open Bash Commander"
+                "title": "Puck - Open Bash Commander",
+                "command": "puck.bashCommander"
+            },
+            {
+                "title": "Puck - Set OpenAI API Key",
+                "command": "puck.setOpenAIKey"
+            },
+            {
+                "title": "Puck - Open Assistant Chat",
+                "command": "puck.openChat"
             }
         ]
+    },
+    "configuration": {
+        "title": "Puck Settings",
+        "properties": {
+            "puck.apikey": {
+                "type": "password",
+                "default": "sk-",
+                "description": "API key for the OpenAI GPT service."
+            },
+            "puck.configuration": {
+                "type": "string",
+                "default": "{}",
+                "description": "The configuration to use for the OpenAI GPT service."
+            }
+        }
     },
     "icon": "./icon.png",
     "main": "./out/extension.js",
@@ -64,9 +83,12 @@
         "typescript": "^4.9.5"
     },
     "dependencies": {
+        "@nomyx/assistant": "^1.2.1",
+        "@nomyx/assistant-tools": "^1.2.0",
         "axios": "^1.4.0",
         "bash-parser": "^0.5.0",
         "diff": "^5.1.0",
+        "dotenv": "^16.3.1",
         "ohm-js": "^17.1.0",
         "sha256": "^0.2.0",
         "shelljs": "^0.8.5",
