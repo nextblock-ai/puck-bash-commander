@@ -296,38 +296,35 @@ export default class PuckREPLCommand extends Command {
 			threadId: string | undefined = undefined
 			): Promise<any> => {
 			if(persona === 'puck') persona = await loadNewPersona(tools);
-			const _getAssistant = async (threadId: any) => {
-				const assistants = await Assistant.list(apiKey);
-				let assistant = assistants.find((a: any) => a.name === name);
-				if (!assistant) {
-					assistant = await Assistant.create(
-						name,
-						await loadNewPersona(tools),
-						schemas,
-						model,
-						threadId
-					);
-					return assistant;
-				}
-				threadId && (assistant.thread = await Thread.get(threadId));
+			const assistants = await Assistant.list(apiKey);
+			let assistant = assistants.find((a: any) => a.name === name);
+			if (!assistant) {
+				assistant = await Assistant.create(
+					name,
+					await loadNewPersona(tools),
+					schemas,
+					model,
+					threadId
+				);
 				return assistant;
 			}
-			return await _getAssistant(threadId);
+			if(threadId)
+			assistant.thread = await Thread.get(threadId);
 		}
 
-		const assistant = await getAssistant(
+		this.assistant = await getAssistant(
 			'vscode-assistant',
 			config.model,
 			await loadNewPersona(schemas),
 			threadId,
 		);
-		let response = await assistant.run(line, tools, schemas, apiKey, (event: any, message: any) => {
+		let response = await this.assistant.run(line, tools, schemas, apiKey, (event: any, message: any) => {
 			this.writeEmitter.fire(event + '\r\n');
 		});
 		// replace \n with \r\n
 		response = response && response.replace(/\n/g, '\r\n');
 		this.writeEmitter.fire(response + '\r\n');
-		threadId = assistant.thread.id;
+		threadId = this.assistant.thread.id;
 
 		this.spinner.stop();
 		this.writeEmitter.fire('> ');
@@ -338,6 +335,10 @@ export default class PuckREPLCommand extends Command {
 			this.spinner.stop();
 			this.writeEmitter.fire('\r\n');
 			this.writeEmitter.fire('KeyboardInterrupt\r\n');
+			if (this.assistant && this.assistant.cancel) {
+				this.assistant.cancel();
+				console.log('canceled');
+			}
 			this.working = false;
 		} else {
 			this.writeEmitter.fire('^C\r\n');

@@ -1,9 +1,9 @@
 {
-    "name": "puck-bash-commander",
+    "name": "puck",
     "publisher": "NextBlock",
-    "displayName": "Puck - Bash Commander",
-    "description": "Part of the Puck suite of AI development tools",
-    "version": "0.1.2",
+    "displayName": "Puck AI Assistant",
+    "description": "Puck is an AI assistant for VS Code. It can help you with your code, or just be a friend.",
+    "version": "0.1.4",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
@@ -31,6 +31,26 @@
             {
                 "title": "Puck - Open Assistant Chat",
                 "command": "puck.openChat"
+            },
+            {
+                "command": "puck.adhocChat",
+                "title": "Puck - Adhoc Chat"
+            },
+            {
+                "command": "puck.insertSystemTag",
+                "title": "Puck - Insert 🌐"
+            },
+            {
+                "command": "puck.insertUserTag",
+                "title": "Puck - Insert 👤"
+            },
+            {
+                "command": "puck.insertAssistantTag",
+                "title": "Puck - Insert 🤖"
+            },
+            {
+                "command": "puck.submitChat",
+                "title": "Puck - Submit Chat"
             }
         ]
     },
@@ -46,6 +66,21 @@
                 "type": "string",
                 "default": "{}",
                 "description": "The configuration to use for the OpenAI GPT service."
+            },
+            "puck.systemDelimiter": {
+                "type": "string",
+                "default": "🌐",
+                "description": "The delimiter to use for system messages"
+            },
+            "puck.userDelimiter": {
+                "type": "string",
+                "default": "👤",
+                "description": "The delimiter to use for user messages"
+            },
+            "puck.assistantDelimiter": {
+                "type": "string",
+                "default": "🤖",
+                "description": "The delimiter to use for assistant messages"
             }
         }
     },

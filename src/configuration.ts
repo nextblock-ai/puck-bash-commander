@@ -4,19 +4,19 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 
 export function getOpenAIKey(org: string): string {
-    return getConfiguration(org).open_api_key;
+    return getConfiguration(org).openai_api_key;
 }
 
 export async function setOpenAIKey(org: string, openAIKey: string): Promise<void> {
     const configuration = getConfiguration(org);
-    configuration.open_api_key = openAIKey;
+    configuration.openai_api_key = openAIKey;
     setConfiguration(org, configuration);
 }
 
 export function getConfiguration(org: string): any {
-    let config: string | undefined = vscode.workspace.getConfiguration(org).get('configuration');
+    // let config: string | undefined = vscode.workspace.getConfiguration(org).get('configuration');
     const _config = {
-        apiKey: process.env.OPENAI_API_KEY,
+        openai_api_key: process.env.OPENAI_API_KEY,
         model: process.env.MODEL || 'gpt-4-1106-preview',
         playHT: {
             userId: process.env.PLAYHT_USER_ID,
@@ -29,21 +29,22 @@ export function getConfiguration(org: string): any {
         setConfigurationToFile(`${process.env.HOME}/.puck.json`, _config);
     }
     const fileConfig = getConfigurationFromFile(`${process.env.HOME}/.puck.json`)
-    return config ? config : (fileConfig ? fileConfig : _config)
+    return fileConfig ? fileConfig : _config;
+    //return config ? config : (fileConfig ? fileConfig : _config)
 }
 
 export function setConfiguration(org: string, configuration: any) {
     try {
         setConfigurationToFile(`${process.env.HOME}/.puck.json`, configuration);
-        vscode.workspace.getConfiguration(org).update('configuration', JSON.stringify(configuration), vscode.ConfigurationTarget.Workspace)
-        .then(() => {
-            const config = vscode.workspace.getConfiguration(org);
-            if (config.has('configuration')) {
-                vscode.window.showInformationMessage('Configuration saved successfully');
-            } else {
-                vscode.window.showErrorMessage('Failed to save configuration');
-            }
-        });
+        // vscode.workspace.getConfiguration(org).update('configuration', JSON.stringify(configuration), vscode.ConfigurationTarget.Workspace)
+        // .then(() => {
+        //     const config = vscode.workspace.getConfiguration(org);
+        //     if (config.has('configuration')) {
+        //         vscode.window.showInformationMessage('Configuration saved successfully');
+        //     } else {
+        //         vscode.window.showErrorMessage('Failed to save configuration');
+        //     }
+        // });
     } catch (error: any) {
         vscode.window.showErrorMessage(`Error updating configuration: ${error.message}`);
     }

@@ -5,7 +5,8 @@
 import * as vscode from "vscode";
 import * as path from 'path';
 
-const { Assistant, Thread, loadNewPersona, tools, schemas } = require('@nomyx/assistant');
+const { Assistant, Thread, loadNewPersona } = require('@nomyx/assistant');
+const { tools, schemas } = require('../tools/index');
 import { Command } from "../utils/Command";
 import { getConfiguration, getOpenAIKey } from "../configuration";
 
@@ -102,7 +103,7 @@ export class ChatPanel {
     
                                 if(currentUpdateStr !== eventSplit) {
                                     currentUpdateStr = eventSplit;
-                                    this.currentPanel.updateChat(eventSplit + '<br>', true);
+                                    this.currentPanel.updateChat(eventSplit, true);
                                 }
                             })
                             .then((textResponse: any) => {
@@ -282,7 +283,7 @@ export class ChatPanel {
                         }
                         // remove [DONE] from the message
                         message = message.replace('[DONE]', '');
-                        messageDiv.textContent += message;
+                        messageDiv.textContent += message + '\n';
                         messageDiv.className = 'chatgpt-message';
                     } else {
                         if (messageDiv && messageDiv.className === 'chatgpt-message' && messageDiv.textContent.startsWith(message)) {
