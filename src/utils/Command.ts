@@ -30,6 +30,7 @@ export abstract class Command {
         const commandDisposable = commands.registerCommand(commandId, this.execute, this);
         context.subscriptions.push(commandDisposable);
         this.onDidRegister();
+        console.log(`Command ${commandId} registered`);
     }
 
     // To be overridden by subclasses, execute the command logic

@@ -1,4 +1,3 @@
-
 export interface Deliverable {
   id: number
   title: string;
@@ -7,7 +6,6 @@ export interface Deliverable {
   tasks: Task[];
 }
 
-// An interface representing a task object
 export interface Task {
   id: number;
   deliverableId: number;
@@ -17,7 +15,6 @@ export interface Task {
   steps: Step[];
 }
 
-// An interface representing a step object (a subtask)
 export interface Step {
   title: string;
   completed: boolean;

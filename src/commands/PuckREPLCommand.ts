@@ -5,9 +5,6 @@
 import * as vscode from "vscode";
 import { Command } from "../utils/Command";
 
-const fs = require('fs');
-const path = require('path');
-
 const { Assistant, Thread, loadNewPersona } = require( '@nomyx/assistant');
 const { tools, schemas } = require('../tools/index');
 
