@@ -2,15 +2,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as logger from './utils/logger';
-
-import commandsActivate from './commands';
-
 import { getOpenAIKey, setConfiguration } from './configuration';
-
+import activate from './commands';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
+async function _(context: vscode.ExtensionContext) {
     logger.activate(context);
 	setConfiguration('puck', {
         openai_api_key: getOpenAIKey('puck'),
@@ -22,8 +19,15 @@ export async function activate(context: vscode.ExtensionContext) {
             femaleVoice: process.env.PLAYHT_FEMALE_VOICE
         }
     });
-    commandsActivate (context);
+    // webview = new SidebarWebview();
+    // webview.activate(context);
+    activate(context);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+function deactivate() {}
+
+export { 
+    _ as activate,
+    deactivate
+}

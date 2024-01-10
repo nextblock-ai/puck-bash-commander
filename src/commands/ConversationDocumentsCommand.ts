@@ -6,18 +6,75 @@ import * as vscode from "vscode";
 import { Command } from "../utils/Command";
 import { loadStyle } from "../utils/style";
 import { loadScript } from "../utils/scripts";
-import AssistantManager from "../managers/AssistantManager";
 import { getConfiguration, getOpenAIKey } from "../configuration";
-
-const { Assistant, Thread, loadNewPersona } = require("@nomyx/assistant");
+const { Assistant, Thread } = require("@nomyx/assistant");
 const { tools, schemas } = require('../tools/index');
+
+export const newPersonaScript = (tools: any) => `*** You are a creative, responsive and advanced AI agent with a vast set of capabilities tightly integrated into a VS code extension ***
+
+You are highly creative, capable of complex reasoning, and able to learn from your experiences. You adapt to new situations quickly and are able to solve problems in novel ways. You often suggest creative solutions to problems that are outside the box.
+You function as a companion, helping your user with whatever task they like. You are able to write code, design websites, and create graphics. You are able to perform complex tasks like refactoring code, creating new classes, and writing unit tests, etc.
+Your programming skills are master-level. You are able to write code in any language and are familiar with all major frameworks and libraries. You are able to write code that is both efficient and elegant. You are especially skilled at writing JavaScript and Python code.
+Your web design skills are master-level. You are able to design and build beautiful, responsive, and accessible websites. You are especially skilled at using React and Tailwind.
+You are tightly integrated into VS code. You are able to access the VS code API and use it to perform complex tasks. You are able to access the VS code DOM and use it to manipulate the editor and the user interface. You are able to access the VS code file system and use it to read and write files. 
+You masterfully wield vscode_execute_command and vscode_apply_edit, and are able to use them to perform complex tasks. You are able to use vscode_execute_command to execute any command in VS code. You are able to use vscode_apply_edit to apply any edit to the editor.
+You are able to use the VS code DOM to manipulate the editor and the user interface. You are able to use the VS code file system to read and write files. You are able to use the VS code API to perform complex tasks.
+You are a master file editor. You are capable of performing complex edits on files using 
+General Instructions:
+
+1. Initialize user_input with actual user input.
+2. Examine your list of tools.
+   2.1. Tools are external functions provided by the user. The full list of tools is:
+   ${
+    Object.values(tools).map((tool: any) => {
+        return `   ${tool.name}: ${tool.description}`
+    })
+    }
+3. Determine and store the difficulty of the task derived from user_input.
+4. If the task difficulty is less than medium difficulty:
+   4.1. Perform the task with the available tools. Be creative and innovative. Think outside the box. Store the result.
+   4.2. End the process.
+5. If the task is medium or above:
+   5.1. Decompose the task into subtasks. Ensure each subtask is less than medium difficulty and has clear success criteria and deliverables.
+   5.2. Announce the subtasks to the user.
+   5.2. For each subtask:
+       5.2.1. Execute the subtask using the available tools. Be creative and innovative. Think outside the box. Store the result.
+       5.2.2. If the subtask was successful, announce the success to the user.
+       5.2.3. If the subtask was unsuccessful, announce the failure to the user. if the failure is unrecoverable, end the process.
+   5.3. Announce the completion of the task to the user.
+6. Provide a summary of actions taken and files created or updated.
+
+Writing to Files:
+
+1. Before writing to a file, check if the file exists and that it contains the expected content.
+2. If the file exists and contains the expected content, update the file. NEVER blindly overwrite a file.
+3. Use replace_file_contents to update the file contents, create_append_overwrite to create a new file.
+4. ALWAYS LASER-FOCUS YOUR FILE UPDATES TO THE EXACT CONTENTS YOU WANT TO UPDATE. NEVER BLINDLY OVERWRITE A FILE.
+
+*** IT IS CRITICAL THAT YOU GIVE THE UTMOST ATTENTION TO FILE UPDATES. ***
+
+** ALWAYS PLAN OUT COMPLEX TASKS BEFORE EXECUTING THEM BY OUTPUTTING THE STEPS TO THE SCREEN **
+
+`;
+
+export function getPersonaPrompt(p: string) {
+    return `First, load your list of tools in preparation for the interaction. Then carefully read through the given task: 
+
+${p}
+
+Now, determine the complexity of the task and decide whether you should decompose it into subtasks.
+If the task is simple, perform it with the available tools. If the task is complex, decompose it into subtasks and perform each subtask with the available tools.
+Once the task is completed, provide a summary of actions taken and files created or updated.  
+
+Please note that you are in the following folder: ${vscode.workspace.workspaceFolders?.[0].uri.fsPath} and you are running on the following os: ${process.platform}.`;
+}
 
 const getAssistant = async (
     name: string = 'vscode-assistant', 
     model: string = 'gpt-4-1106-preview',
     threadId: string | undefined = undefined
     ): Promise<any> => {
-    const persona = await loadNewPersona(schemas);
+    const persona = newPersonaScript(schemas);
     const apiKey = getOpenAIKey('puck');
     const assistants = await Assistant.list(apiKey);
     let assistant = assistants.find((a: any) => a.name === name);
@@ -420,24 +477,31 @@ export class ChatEditorProvider implements vscode.CustomTextEditorProvider {
                         });
                     };
                 
-                    let isStreaming = false;
                     let currentAssistantCard;
 
+                    function startStreamedMessage(message) {
+                        // If this is the start of the streamed message.
+                        const msg = message.response ? message.response : message;
+                        const newAssistantMessage = msg;
+                        messages.push(newAssistantMessage);
+                        currentAssistantCard = addMessageCard(newAssistantMessage.role, newAssistantMessage.content);
+                    }
+
                     function updateStreamedMessage(message) {
-                        if (isStreaming === false) {
-                            // If this is the start of the streamed message.
-                            isStreaming = true;
-                            const msg = message.response ? message.response : message;
-                            const newAssistantMessage = msg;
-                            messages.push(newAssistantMessage);
-                            currentAssistantCard = addMessageCard(newAssistantMessage.role, newAssistantMessage.content);
-                        } else {
-                            // If this is the next part of the streamed message.
-                            const lastMessage = messages[messages.length - 1];
-                            if (lastMessage && lastMessage.role === 'assistant') {
-                                lastMessage.content += message.content;
-                                currentAssistantCard.querySelector('.message-content').innerHTML = window.marked.marked(lastMessage.content);
-                            }
+                        // If this is the next part of the streamed message.
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && lastMessage.role === 'assistant') {
+                            lastMessage.content += message.content;
+                            currentAssistantCard.querySelector('.message-content').innerHTML = window.marked.marked(lastMessage.content);
+                        }
+                    }
+
+                    function finishStreamedMessage(message) {
+                        // If this is the next part of the streamed message.
+                        const lastMessage = messages[messages.length - 1];
+                        if (lastMessage && lastMessage.role === 'assistant') {
+                            lastMessage.content = message.content;
+                            currentAssistantCard.querySelector('.message-content').innerHTML = window.marked.marked(lastMessage.content);
                         }
                     }
 
@@ -489,7 +553,16 @@ export class ChatEditorProvider implements vscode.CustomTextEditorProvider {
                                 document.body.style.backgroundColor = message.themeColor;
                                 document.body.style.fontFamily = message.editorFontFamily;
                                 break;
-                                
+
+                            case 'startStream':
+                                if(message.response) {
+                                    startStreamedMessage(message.response);
+                                } else {
+                                    const msg = message.data.messages[message.data.messages.length - 1];
+                                    startStreamedMessage(msg);
+                                }
+                                break;
+
                             case 'updateStream':
                                 if(message.response) {
                                     updateStreamedMessage(message.response);
@@ -497,9 +570,16 @@ export class ChatEditorProvider implements vscode.CustomTextEditorProvider {
                                     const msg = message.data.messages[message.data.messages.length - 1];
                                     updateStreamedMessage(msg);
                                 }
-
+                                break;
+                            
                             case 'finishStream':
-                                isStreaming = false;
+                                if(message.response) {
+                                    finishStreamedMessage(message.response);
+                                } else {
+                                    const msg = message.data.messages[message.data.messages.length - 1];
+                                    finishStreamedMessage(msg);
+                                }
+                                break;
                         }
                     });
 
@@ -660,24 +740,39 @@ export class ChatEditorProvider implements vscode.CustomTextEditorProvider {
                         updateDocumentContent(document, { messages:  message.data });
                         let messages = message.data;
                         this.assistant = await getAssistant(
-                            'vscode-assistant',
+                            'nomyx-vscode-assistant',
                             config.model,
                             threadId,
                         );
-                        let latestMessage = messages[messages.length - 1].content
+                        let latestMessage = getPersonaPrompt(messages[messages.length - 1].content)
+                        let message_number = 0;
                         let response = await this.assistant.run(latestMessage, tools, schemas, apiKey, (event: any, message: any) => {
-
+                            if(message_number === 0) {
+                                webviewPanel.webview.postMessage({
+                                    command: 'startStream',
+                                    response: {
+                                        role: 'assistant',
+                                        content: `.`
+                                    }
+                                });
+                                message_number++;
+                                return;
+                            }
+                            webviewPanel.webview.postMessage({
+                                command: 'updateStream',
+                                response: {
+                                    role: 'assistant',
+                                    content: `.`
+                                }
+                            });
+                            message_number++;
                         });
                         webviewPanel.webview.postMessage({
-                            command: 'updateStream',
+                            command: 'finishStream',
                             response: {
                                 role: 'assistant',
                                 content: response
                             }
-                        });
-                        webviewPanel.webview.postMessage({
-                            command: 'finishStream',
-                            response: true
                         });
                         threadId = this.assistant.thread.id;
                         break;

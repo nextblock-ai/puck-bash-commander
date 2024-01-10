@@ -20,11 +20,17 @@ Puck - Bash Commander is an extension for Visual Studio Code that brings the pow
 
 ## 🔥 Features
 
-- AI-powered shell assistant: Bash Commander is an advanced shell agent that can help you implement tasks, decompose complex tasks into smaller subtasks, and even guide you through the process of completing tasks step-by-step.
+AI-powered shell assistant: Bash Commander is an advanced shell agent that can help you implement tasks, decompose complex tasks into smaller subtasks, and even guide you through the process of completing tasks step-by-step.
 
-- Multilingual support: Bash Commander can output shell commands for any programming language, making it a versatile tool for developers working in various languages and environments.
+Chat Documents: Bash Commander has a chat document model that allows you to communicate with the shell agent and ask it questions about your tasks, then save the conversation as a document for future reference.
 
-- Seamless integration with Visual Studio Code: Bash Commander is designed to work within your existing development workflow, integrating seamlessly with Visual Studio Code.
+Chat Terminal: Bash Commander has a chat terminal that allows you to communicate with the shell agent and ask it questions about your tasks using a terminal interface.
+
+Ad-hoc Chat: Bash Commander has an ad-hoc chat feature that allows you to communicate with the shell agent within any existing document by embedding chat controls into the document.
+
+Multilingual support: Bash Commander can output shell commands for any programming language, making it a versatile tool for developers working in various languages and environments.
+
+Seamless integration with Visual Studio Code: Bash Commander is designed to work within your existing development workflow, integrating seamlessly with Visual Studio Code.
 
 ## 🚀 Getting Started
 
@@ -33,11 +39,11 @@ Puck - Bash Commander is an extension for Visual Studio Code that brings the pow
 3. Get Your [Open AI API Key](https://platform.openai.com/account/api-keys)
 4. Add your own Open AI API key by running the  the “Set Open AI Key” command from the command palette (Mac: CMD+shift+P) (Windows: F1).
 5. Reload Visual Studio Code
-6. Open a  [new or existing project](https://code.visualstudio.com/docs/editor/workspaces) 
+6. Open a  [new or existing project](https://code.visualstudio.com/docs/editor/workspaces)
 7. Launch the Bash Commander terminal by running the "Open Bash Commander" command from the command palette (CMD+shift+P).
-8. Start interacting with the AI-powered shell agent by entering your development tasks and questions.
-9. To Stop Bash Commander, reload the window by running the "Developer: Reload Window" command from the command palette (CMD+shift+P).
-
+8. Open the Bash Commander chat conversation by running the "Open Bash Commander Chat" command from the command palette (CMD+shift+P).
+9. Start interacting with the AI-powered shell agent by entering your development tasks and questions.
+10. To Stop Bash Commander, reload the window by running the "Developer: Reload Window" command from the command palette (CMD+shift+P).
 
 ## 🔧 Configuration
 
@@ -47,7 +53,7 @@ Puck - Bash Commander provides several configuration options that you can custom
 - `puck.temperature`: The default temperature to use in queries. This affects the creativity of the AI's responses. Higher values result in more creative responses, while lower values produce more focused and deterministic outputs.
 - `puck.maxTokens`: The default maximum number of tokens to use in queries. This limits the length of the AI's responses.
 
-## 📚 Using Bash Commander 
+## 📚 Using Bash Commander
 
 Once you have installed and configured the Puck - Bash Commander extension, you can start using its features to streamline your development process:
 
@@ -57,25 +63,25 @@ Once you have installed and configured the Puck - Bash Commander extension, you 
 
 ## ✨ Use Cases
 
-- **Full Stack Development** *(Full Stack Developers)*: 
+- **Full Stack Development** *(Full Stack Developers)*:
     Manage both front-end and back-end components efficiently by asking Puck - Bash Commander to switch between development environments and perform routine tasks.
-    
-- **Web Development Workflow** *(Web Developer)*: 
+
+- **Web Development Workflow** *(Web Developer)*:
     Streamline project setup by asking Puck - Bash Commander to create directories, move files, and set up a local development environment.
 
-- **Data Analysis and Visualization** *(Data Scientist)*: 
+- **Data Analysis and Visualization** *(Data Scientist)*:
     Simplify Python-based data analysis by asking Puck - Bash Commander to create new Python files, set up virtual environments, and install required packages.
 
-- **Mobile App Development** *(Mobile App Developer)*: 
+- **Mobile App Development** *(Mobile App Developer)*:
     Efficiently manage React Native projects by asking Puck - Bash Commander to navigate to project folders, install packages, and link native modules.
 
-- **DevOps Automation** *(DevOps Engineer)*: 
+- **DevOps Automation** *(DevOps Engineer)*:
     Automate common tasks like setting up CI pipelines and deploying code by asking Puck - Bash Commander to create Dockerfiles, build Docker images, and push them to a container registry.
 
-- **Developer Assistance** *(Beginner Developer)*: 
+- **Developer Assistance** *(Beginner Developer)*:
     Receive guidance on programming tasks and concepts by asking Puck - Bash Commander questions or troubleshooting problems directly in the terminal.
 
-- **Freelance Project Management** *(Freelancer)*: 
+- **Freelance Project Management** *(Freelancer)*:
     Adapt to different programming languages and tools by asking Puck - Bash Commander to assist with tasks like cloning Git repositories and setting up local development environments.
 
 Here are some other example tasks and questions you can try with the Bash Commander:
@@ -95,11 +101,10 @@ In the current beta status, if Puck Bash Commander is not operating correctly, r
 
   **Known Errors**
 
-  - The error of overwriting files poorly is known and fixed in an upcoming release
-  - The error of puck executing two commands is known and fixed in an upcoming release
-  - The error of puck only doing BASH things is known and fixed in an upcoming release
-  - The error of puck not shutting down fully is know and being worked on
-
+- The error of overwriting files poorly is known and fixed in an upcoming release
+- The error of puck executing two commands is known and fixed in an upcoming release
+- The error of puck only doing BASH things is known and fixed in an upcoming release
+- The error of puck not shutting down fully is know and being worked on
 
 ## 📄 License
 
@@ -117,8 +122,7 @@ As an experiment, Puck may generate content or take actions that are not in line
 
 By using Puck and Bash Commander, you agree to indemnify, defend, and hold harmless the developers, contributors, and any affiliated parties from and against any and all claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from your use of this software or your violation of these terms.
 
-
- ## 📌 Beta Version Disclaimer
+## 📌 Beta Version Disclaimer
 
 Please be aware that this software/project is currently in its Beta version, which means it's still in the active development stage. This version is intended for testing and feedback purposes, not for production use.
 

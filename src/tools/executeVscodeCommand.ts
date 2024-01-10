@@ -13,12 +13,8 @@ module.exports  = {
                         description: 'The VS Code command to execute.'
                     },
                     _arguments: {
-                        type: 'array',
-                        description: 'An array of arguments for the command.',
-                        items: {
-                            type: 'object',
-                            additionalProperties: true
-                        }
+                        type: 'string',
+                        description: 'A comma-separated list of arguments to pass to the command.',
                     }
                 },
                 required: ['command']
@@ -27,7 +23,9 @@ module.exports  = {
     },
     function: async ({ command, _arguments }: any) => {
         try {
-            return JSON.stringify(await vscode.commands.executeCommand(command, ... _arguments))
+            _arguments = _arguments ? _arguments.split(',') : [];
+            const result = await vscode.commands.executeCommand(command, ..._arguments);
+            return result ? JSON.stringify(result) : 'command executed';
         } catch (err: any) {
             return err.message;
         }

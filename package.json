@@ -2,8 +2,8 @@
     "name": "puck",
     "publisher": "NextBlock",
     "displayName": "Puck AI Assistant",
-    "description": "Puck is an AI assistant for VS Code. It can help you with your code, or just be a friend.",
-    "version": "0.1.5",
+    "description": "Puck is an AI assistant for VS Code. Puck is integrated with VS Code and is able to perform a variety of tasks.",
+    "version": "0.2.5",
     "repository": {
         "type": "git",
         "url": "https://github.com/nextblock-ai/puck-bash-commander.git"
@@ -55,6 +55,50 @@
             {
                 "command": "puck.openChatDocumentView",
                 "title": "Puck - Open Chat Document"
+            },
+            {
+                "command": "puck.generateScript",
+                "title": "Puck - Generate Notebook Script"
+            },
+            {
+                "command": "puck.fixNotebook",
+                "title": "Puck - Fix Notebook"
+            },
+            {
+                "command": "puck.completeCell",
+                "title": "Puck - Complete Cell"
+            },
+            {
+                "command": "puck.explainError",
+                "title": "Puck - Explain Error"
+            },
+            {
+                "command": "puck.explainCellError",
+                "title": "Puck - Explain Cell Error"
+            },
+            {
+                "command": "puck.generateSuggestions",
+                "title": "Puck - Generate Suggestions"
+            },
+            {
+                "command": "puck.showJupyterSidebar",
+                "title": "Puck - Show Jupyter Sidebar"
+            },
+            {
+                "command": "puck.hideJupyterSidebar",
+                "title": "Puck - Hide Jupyter Sidebar"
+            },
+            {
+                "command": "puck.toggleJupyterSidebar",
+                "title": "Puck - Toggle Jupyter Sidebar"
+            },
+            {
+                "command": "puck.scriptFromNotebook",
+                "title": "Puck - Script from Notebook"
+            },
+            {
+                "command": "puck.completeCellWithPrompt",
+                "title": "Puck - Complete Cell with Prompt"
             }
         ],
         "customEditors": [
@@ -134,13 +178,15 @@
         "typescript": "^4.9.5"
     },
     "dependencies": {
-        "@nomyx/assistant": "^1.2.5",
-        "@nomyx/assistant-tools": "^1.2.5",
+        "@nomyx/assistant": "^1.6.0",
+        "@nomyx/assistant-tools": "^1.6.1",
         "axios": "^1.4.0",
         "bash-parser": "^0.5.0",
         "diff": "^5.1.0",
         "dotenv": "^16.3.1",
+        "markdown-it": "^14.0.0",
         "ohm-js": "^17.1.0",
+        "openai": "^4.24.1",
         "sha256": "^0.2.0",
         "shelljs": "^0.8.5",
         "split2": "^4.2.0",

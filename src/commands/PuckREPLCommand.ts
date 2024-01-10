@@ -5,7 +5,7 @@
 import * as vscode from "vscode";
 import { Command } from "../utils/Command";
 
-const { Assistant, Thread, loadNewPersona } = require( '@nomyx/assistant');
+const { Assistant, Thread } = require( '@nomyx/assistant');
 const { tools, schemas } = require('../tools/index');
 
 function colorText(text: string, colorIndex: number): string {
@@ -26,6 +26,7 @@ let threadId: any = undefined;
 import process from 'process';
 import readline from 'readline';
 import { getOpenAIKey } from "../configuration";
+import { getPersonaPrompt, newPersonaScript } from "./ConversationDocumentsCommand";
 
 interface SpinnerConfig {
     title: string;
@@ -115,7 +116,7 @@ export default class PuckREPLCommand extends Command {
 		let line = '';
 		const we = this.writeEmitter = new vscode.EventEmitter<string>();
 		this.spinner = new Spinner(this.writeEmitter, {
-			title: "loading",
+			title: "",
 			interval: 120,
 			frames: [
 				"䷀",
@@ -283,7 +284,6 @@ export default class PuckREPLCommand extends Command {
 
 		const { getOpenAIKey, getConfiguration } = require('../configuration');
 
-		const apiKey = getOpenAIKey('puck');
 		const config = getConfiguration('puck');
 
 		const getAssistant = async (
@@ -292,13 +292,14 @@ export default class PuckREPLCommand extends Command {
 			persona: string = 'puck',
 			threadId: string | undefined = undefined
 			): Promise<any> => {
-			if(persona === 'puck') persona = await loadNewPersona(tools);
+			if(persona === 'puck') persona = await newPersonaScript(tools);
+			const apiKey = getOpenAIKey();
 			const assistants = await Assistant.list(apiKey);
 			let assistant = assistants.find((a: any) => a.name === name);
 			if (!assistant) {
 				assistant = await Assistant.create(
 					name,
-					await loadNewPersona(tools),
+					newPersonaScript(tools),
 					schemas,
 					model,
 					threadId
@@ -307,16 +308,27 @@ export default class PuckREPLCommand extends Command {
 			}
 			if(threadId)
 			assistant.thread = await Thread.get(threadId);
+			return assistant;
 		}
 
 		this.assistant = await getAssistant(
 			'vscode-assistant',
 			config.model,
-			await loadNewPersona(schemas),
+			newPersonaScript(schemas),
 			threadId,
 		);
-		let response = await this.assistant.run(line, tools, schemas, apiKey, (event: any, message: any) => {
-			this.writeEmitter.fire(event + '\r\n');
+		let wrun = false
+		const apiKey = getOpenAIKey();
+		let response = await this.assistant.run(getPersonaPrompt(line), tools, schemas, apiKey, (event: any, message: any) => {
+			let delim =  '\r\n';
+			if(event.startsWith('update run status')) {
+				delim = '\r';
+				wrun = true;
+			} else if(wrun) {
+				delim = '\n\r\n';
+				wrun = false;
+			}
+			this.writeEmitter.fire(event + delim);
 		});
 		// replace \n with \r\n
 		response = response && response.replace(/\n/g, '\r\n');

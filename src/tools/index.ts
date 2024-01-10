@@ -8,6 +8,7 @@ const openFile = require('./openFile');
 const openFolder = require('./openFolder');
 const readActiveFile = require('./readActiveFile');
 const replaceCode = require('./replaceCode');
+const applyEdit = require('./applyEdit');
 
 const config = getConfiguration('puck');
 if(Object.keys(config).length === 0) {
@@ -18,14 +19,15 @@ if(Object.keys(config).length === 0) {
 const baseTools: any = require('@nomyx/assistant-tools')(config);
 
 const tools: any = {
-    deleteCode: deleteCode.function,
-    executeVSCodeCommand: executeVSCodeCommand.function,
-    formatCode: formatCode.function,
-    navigateTo: navigateTo.function,
-    openFile: openFile.function,
-    openFolder: openFolder.function,
-    readActiveFile: readActiveFile.function,
-    replaceCode: replaceCode.function
+    [deleteCode.schema.function.name]: deleteCode.function,
+    [executeVSCodeCommand.schema.function.name]: executeVSCodeCommand.function,
+    [formatCode.schema.function.name]: formatCode.function,
+    [navigateTo.schema.function.name]: navigateTo.function,
+    [openFile.schema.function.name]: openFile.function,
+    [openFolder.schema.function.name]: openFolder.function,
+    [readActiveFile.schema.function.name]: readActiveFile.function,
+    [replaceCode.schema.function.name]: replaceCode.function,
+    [applyEdit.schema.function.name]: applyEdit.function
 };
 
 const schemas = [
@@ -36,7 +38,8 @@ const schemas = [
     openFile.schema,
     openFolder.schema,
     readActiveFile.schema,
-    replaceCode.schema
+    replaceCode.schema,
+    applyEdit.schema
 ];
 
 module.exports = {
